@@ -1,0 +1,89 @@
+﻿@model UserLoginViewModel
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+
+@await Component.InvokeAsync("_LoginStyleComponentPartial")
+
+<body>
+
+  <div class="auth-bg" aria-hidden="true"><span class="g1"></span><span class="g2"></span><span class="g3"></span></div>
+
+  <!-- =====================================================================
+       LOGIN PAGE
+       ASP.NET Core MVC: Views/Account/Login.cshtml (Layout = "_AuthLayout")
+       Form → asp-controller="Account" asp-action="Login" method="post"
+       Model → LoginViewModel (UserNameOrEmail, Password, RememberMe)
+       ===================================================================== -->
+  <main class="auth-page">
+  <div class="auth-card">
+            @await Component.InvokeAsync("_LoginBrandComponentPartial")
+
+      <!-- Sağ: giriş formu -->
+      <section class="auth-form-wrap" id="formWrap">
+        <div id="loginView">
+          <div class="form-head">
+            <h1>Giriş Yap</h1>
+            <p>Tekrar hoş geldiniz! Mailora hesabınıza giriş yapın.</p>
+            <!-- ASP.NET: asp-controller="Account" asp-action="Register" -->
+            <div class="switch-link">Hesabınız yok mu? <a href="Register.html">Kayıt Ol</a></div>
+          </div>
+
+          <form method="post">
+            <!-- ASP.NET: @Html.AntiForgeryToken() / asp-validation-summary="ModelOnly" → #formAlert -->
+            <div class="form-alert" id="formAlert" role="alert"></div>
+
+            <div class="form-grid">
+
+              <div class="field" data-field="userNameOrEmail">
+                <label for="userNameOrEmail">Email veya Kullanıcı Adı <span class="req">*</span></label>
+                <div class="input-wrap">
+                  <i class="bi bi-person lead"></i>
+                  <input class="a-input" id="userNameOrEmail" asp-for="UserName" type="text" placeholder="ad@ornek.com veya kullanıcı adı" autocomplete="username" maxlength="100" spellcheck="false" autocapitalize="none" required>
+                  <i class="bi bi-exclamation-circle-fill state err"></i>
+                </div>
+                <div class="msg" aria-live="polite"></div>
+              </div>
+
+              <div class="field" data-field="password">
+                <label for="password">Şifre <span class="req">*</span></label>
+                <div class="input-wrap">
+                  <i class="bi bi-lock lead"></i>
+                  <input class="a-input has-eye" id="password" asp-for="Password" type="password" placeholder="Şifrenizi girin" autocomplete="current-password" required>
+                  <i class="bi bi-exclamation-circle-fill state err"></i>
+                  <button type="button" class="eye-btn" data-eye="password" aria-label="Şifreyi göster" title="Şifreyi göster"><i class="bi bi-eye"></i></button>
+                </div>
+                <div class="caps"><i class="bi bi-capslock"></i> Caps Lock açık</div>
+                <div class="msg" aria-live="polite"></div>
+              </div>
+
+              <div class="form-row">
+                <label class="remember" for="rememberMe">
+                  <input type="checkbox" class="m-check" id="rememberMe" name="RememberMe"> Beni hatırla
+                </label>
+                <button type="button" class="link-btn" data-open-reset>Şifremi unuttum?</button>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-primary-x" id="submitBtn">
+              <span class="lbl">Giriş Yap</span><i class="bi bi-arrow-right"></i>
+            </button>
+
+            <div class="secure-note"><i class="bi bi-shield-check"></i> Bağlantınız şifrelenerek korunur.</div>
+            <div class="form-foot">Hesabınız yok mu? <a href="Register.html">Kayıt Ol</a></div>
+          </form>
+        </div>
+      </section>
+    </div>
+  </main>
+
+
+    @await Component.InvokeAsync("_LoginTermsComponentPartial")
+
+    @await Component.InvokeAsync("_LoginScriptComponentPartial")
+</body>
+</html>

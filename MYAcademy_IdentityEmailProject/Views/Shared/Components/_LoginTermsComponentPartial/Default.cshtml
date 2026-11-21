@@ -1,0 +1,43 @@
+﻿  <!-- =====================================================================
+       ŞİFRE SIFIRLAMA MODAL
+       ASP.NET: Views/Account/_ForgotPasswordModal.cshtml (partial) → asp-action="ForgotPassword"
+       ===================================================================== -->
+  <div class="k-modal" id="resetModal" aria-hidden="true">
+    <div class="k-dialog" role="dialog" aria-modal="true" aria-labelledby="resetTitle">
+      <div class="k-head">
+        <div class="ic"><i class="bi bi-key"></i></div>
+        <div>
+          <h3 id="resetTitle">Şifrenizi mi unuttunuz?</h3>
+          <p>E-posta adresinizi girin, size bir sıfırlama bağlantısı gönderelim.</p>
+        </div>
+        <button type="button" class="k-close" data-close-reset aria-label="Kapat"><i class="bi bi-x-lg"></i></button>
+      </div>
+
+      <div class="k-body">
+        <form id="resetForm" novalidate>
+          <div class="field" data-field="resetEmail">
+            <label for="resetEmail">Email <span class="req">*</span></label>
+            <div class="input-wrap">
+              <i class="bi bi-envelope lead"></i>
+              <input class="a-input" id="resetEmail" name="Email" type="email" placeholder="ad.soyad@ornek.com" autocomplete="email" spellcheck="false" autocapitalize="none" required>
+              <i class="bi bi-exclamation-circle-fill state err"></i>
+            </div>
+            <div class="hint">Hesabınıza kayıtlı e-posta adresini girin.</div>
+            <div class="msg" aria-live="polite"></div>
+          </div>
+        </form>
+        <div class="sent-view" id="resetSent" hidden>
+          <div class="sent-ic"><i class="bi bi-envelope-check"></i></div>
+          <h4>E-postanızı kontrol edin</h4>
+          <p id="resetSentText"></p>
+        </div>
+      </div>
+
+      <div class="k-foot">
+        <button type="button" class="btn-ghost" data-close-reset id="resetCancel">Vazgeç</button>
+        <button type="submit" class="btn-primary-x" form="resetForm" id="resetSubmit"><span class="lbl">Bağlantı Gönder</span><i class="bi bi-send"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
