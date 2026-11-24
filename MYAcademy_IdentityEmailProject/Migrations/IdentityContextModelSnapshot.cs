@@ -17,7 +17,7 @@ namespace MYAcademy_IdentityEmailProject.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.15")
+                .HasAnnotation("ProductVersion", "9.0.23")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -137,7 +137,7 @@ namespace MYAcademy_IdentityEmailProject.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("RecieverEmail")
+                    b.Property<string>("ReceiverEmail")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
