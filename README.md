@@ -131,73 +131,47 @@ Tüm mesajlar SQL Server'da tutulur; her kullanıcı yalnızca kendi gelen kutus
 
 ## 📖 Proje Hakkında
 
-**Mailora**, kullanıcıların kayıt olup e-posta adreslerini doğruladıktan sonra birbirlerine mesaj gönderebildiği, gerçek e-posta adreslerine de SMTP üzerinden e-posta iletebildiği bir mesaj yönetim sistemidir. Proje iki bölümden oluşur:
-
-- **Üyelik ekranları** (`/Login/SignIn`, `/Register/SignUp`): Giriş, kayıt, 6 haneli e-posta doğrulama, şifremi unuttum ve şifre yenileme sayfaları. Kimlik işlemlerinin tamamı **ASP.NET Core Identity** ile yapılır.
-- **Mesaj paneli** (`/Dashboard`, `/Message`, `/Profile`): Giriş gerektiren, ortak layout üzerinde çalışan sayfalar. Sidebar ve navbar, oturumdaki kullanıcıya göre veritabanından beslenen ViewComponent'lerdir.
-
-Proje, M&Y Yazılım Eğitim Akademi 12. dönem Identity e-posta case çalışması kapsamında geliştirilmiştir.
+**Mailora**, kullanıcıların kayıt olup e-posta adreslerini doğruladıktan sonra birbirlerine mesaj gönderebildiği, kayıtlı olmayan adreslere de SMTP üzerinden gerçek e-posta iletebildiği bir mesaj yönetim sistemidir. Üyelik işlemlerinin tamamı **ASP.NET Core Identity** ile yapılır; panel sayfaları ortak bir layout üzerinde çalışır ve sidebar ile navbar oturumdaki kullanıcıya göre veritabanından beslenir.
 
 ---
 
 ## ✨ Özellikler
 
 ### Üyelik ve Güvenlik
-- **Kayıt ve 6 haneli doğrulama:** Kayıt sonrası e-posta adresine 6 haneli kod gönderilir. Kod doğrulanmadan giriş yapılamaz (`RequireConfirmedEmail`). Kod tekrar gönderilebilir, 5 hatalı denemede hesap geçici olarak kilitlenir.
-- **Giriş ve çıkış:** Kullanıcı adı veya e-posta ile giriş, "Beni hatırla", 5 hatalı şifre denemesinde 5 dakikalık kilit, güvenli çıkış (POST).
-- **Şifremi unuttum:** Tek kullanımlık, 30 dakika geçerli şifre yenileme bağlantısı e-posta ile gönderilir. Süresi dolmuş, daha önce kullanılmış veya hatalı bağlantılar yenileme ekranında reddedilir.
-- **Şifre değiştirme:** Profil sayfasında mevcut şifre doğrulanarak yapılır; oturum kapanmadan yenilenir.
-- **Hata ekranları:** Giriş yapmadan korumalı sayfaya erişim → **401**, başka kullanıcıya ait mesaja erişim → **403**, olmayan sayfa veya mesaj → **404**.
-- **Veri güvenliği:** Tüm mesaj işlemleri oturumdaki kullanıcının e-posta adresine göre filtrelenir; URL'deki id değiştirilerek başkasının mesajı görüntülenemez veya değiştirilemez. Mesaj içeriği ekrana basılmadan önce DOMPurify ile temizlenir, tüm POST isteklerinde AntiForgery doğrulaması yapılır. Identity hata mesajları Türkçeleştirilmiştir (`CustomIdentityValidator`).
+- **Kayıt ve doğrulama:** Kayıt sonrası e-posta adresine 6 haneli kod gönderilir; kod doğrulanmadan giriş yapılamaz.
+- **Giriş ve çıkış:** Kullanıcı adı veya e-posta ile giriş, "Beni hatırla" ve hatalı denemelerde geçici kilit.
+- **Şifre işlemleri:** Tek kullanımlık, 30 dakika geçerli şifre yenileme bağlantısı; profilden mevcut şifreyle şifre değiştirme.
+- **Hata ekranları:** Giriş yapmadan erişim **401**, başkasına ait mesaj **403**, olmayan sayfa veya mesaj **404**.
+- **Veri güvenliği:** Tüm mesaj işlemleri oturumdaki kullanıcıya göre filtrelenir; URL'deki id değiştirilerek başkasının mesajına erişilemez.
 
 ### Mesaj Yönetimi
-- **Gelen Kutusu:** Yalnızca oturumdaki alıcıya gelen mesajlar. Arama, kategori filtresi, tarihe göre sıralama, Tümü / Okunmamış / Yıldızlı filtreleri, okunmamış mesaj sayısı, toplu okundu / okunmadı / silme işlemleri ve sayfalama.
-- **Mesaj Detayı:** Açılan mesaj okundu olarak işaretlenir. Yıldızlama ve yıldız kaldırma, okunmadı yapma, yanıtla, ilet, hızlı yanıt, yazdırma ve çöp kutusuna taşıma.
-- **Yeni Mesaj:** Gönderen bilgisi Identity hesabından alınır; alıcı, kategori, konu ve içerik hem istemci hem sunucu tarafında doğrulanır. Zengin metin editörü bulunur.
-- **Gönderim:** Uygulamaya kayıtlı bir kullanıcıya gönderilen mesaj alıcının Gelen Kutusu'na ve gönderenin Gönderilenler alanına düşer. Kayıtlı olmayan adreslere **MailKit** ile SMTP üzerinden gerçek e-posta gönderilir.
-- **Gönderilenler ve Yıldızlı Mesajlar:** Kullanıcıya özel listeler; gönderilenlerde alıcının mesajı okuyup okumadığı görünür.
-- **Taslaklar:** Mesaj taslak olarak kaydedilir, daha sonra düzenlenip gönderilebilir.
-- **Çöp Kutusu:** Mesajlar çöp kutusuna taşınır, geri yüklenir veya kalıcı olarak silinir. Gönderen ve alıcının silme işlemleri birbirini etkilemez.
-- **Kategoriler:** Veritabanından gelir; mesaj oluştururken seçilir, sidebar'dan ve liste filtrelerinden mesajlar kategoriye göre süzülür.
+- **Gelen Kutusu:** Arama, kategori filtresi, tarihe göre sıralama, okunmamış ve yıldızlı filtreleri, toplu işlemler.
+- **Mesaj Detayı:** Okundu / okunmadı, yıldızlama, yanıtla, ilet ve hızlı yanıt.
+- **Yeni Mesaj:** Gönderen bilgisi Identity hesabından alınır, alanlar doğrulanır. Kayıtlı kullanıcıya giden mesaj alıcının Gelen Kutusu'na düşer; kayıtlı olmayan adreslere **MailKit** ile gerçek e-posta gönderilir.
+- **Gönderilenler, Yıldızlılar, Taslaklar ve Çöp Kutusu:** Kullanıcıya özel listeler. Taslaklar düzenlenip gönderilebilir, çöp kutusundaki mesajlar geri yüklenebilir veya kalıcı olarak silinebilir.
+- **Kategoriler:** Veritabanından gelir; mesaj oluştururken seçilir ve listeler kategoriye göre filtrelenir.
 
 ### Panel
-- **Dashboard:** Gelen, gönderilen, okunmamış, yıldızlı ve taslak mesaj sayıları gerçek verilerden hesaplanır. Son 7 / 30 günlük mesaj trafiği grafiği, kategorilere göre dağılım grafiği, son gelen ve son gönderilen 5 mesaj, hızlı erişim kısayolları.
-- **Profilim:** Ad, soyad, telefon, hakkımda ve profil fotoğrafı güncelleme; mesaj istatistikleri ve hesap durumu.
-- **Navbar ve Sidebar:** Oturumdaki kullanıcının adı, kullanıcı adı ve fotoğrafı; okunmamış mesaj bildirimleri; okunmamış, taslak, yıldızlı ve çöp kutusu rozetleri.
+- **Dashboard:** Gerçek verilerden hesaplanan sayaçlar, mesaj trafiği ve kategori dağılımı grafikleri, son mesajlar.
+- **Profilim:** Ad, soyad, telefon, hakkımda ve profil fotoğrafı güncelleme.
+- **Navbar ve Sidebar:** Kullanıcı bilgileri, yeni mesaj bildirimleri ve kutu rozetleri.
 
 ---
 
 ## 🧩 Mimari
 
-Paneldeki tüm sayfalar ortak layout'u ([Views/MessageLayout/Index.cshtml](MYAcademy_IdentityEmailProject/Views/MessageLayout/Index.cshtml)) kullanır. Layout parçaları ViewComponent olarak ayrılmıştır ve veritabanı bağlantısını Dependency Injection ile alır:
+Paneldeki sayfalar ortak layout'u kullanır; layout parçaları veritabanı bağlantısını Dependency Injection ile alan ViewComponent'lere ayrılmıştır:
 
 ```
 MessageLayout/Index
-├── _MessageLayoutStyleComponentPartial     head, Bootstrap, tema CSS
+├── _MessageLayoutStyleComponentPartial     head, tema CSS
 ├── _MessageLayoutSidebarComponentPartial   menü, rozetler, kategoriler       → Messages + Categories
 ├── _MessageLayoutNavbarComponentPartial    kullanıcı bilgisi, bildirimler    → AspNetUsers + Messages
-├── @RenderBody()                           Dashboard, Inbox, Sendbox, Favorites, Drafts, Trash,
-│                                           MessageDetail, CreateMessage, Profile
-└── _MessageLayoutScriptComponentPartial    ortak JS: toast, toplu seçim, sayfalama, DOMPurify
+├── @RenderBody()                           Dashboard, Message ve Profile sayfaları
+└── _MessageLayoutScriptComponentPartial    ortak JavaScript
 ```
 
-Üyelik ve hata sayfaları layout kullanmaz; her biri kendi ViewComponent'lerinden oluşur:
-
-```
-Login/SignIn, PasswordChange/*   → _LoginStyle, _LoginBrand, _LoginTerms (şifre sıfırlama modalı), _LoginScript
-Register/SignUp                  → _RegisterStyle, _RegisterBrand, _RegisterTerms (KVKK modalı), _RegisterScript
-ConfirmMail/Index                → _ConfirmMailStyle, _ConfirmMailScript (6 haneli kod alanı)
-ErrorPages/Page401, 403, 404     → _ErrorPagesStyle
-```
-
-Bir mesaj, gönderen ve alıcı için tek kayıt olarak tutulur. Her iki tarafın durumu ayrı alanlarla izlenir:
-
-| Alan | Açıklama |
-|---|---|
-| `IsRead`, `IsFavorite` | Alıcının okundu ve yıldız bilgisi |
-| `IsDraft` | Henüz gönderilmemiş taslak |
-| `IsTrashBySender`, `IsTrashByReceiver` | Gönderenin / alıcının çöp kutusunda |
-| `IsDeletedBySender`, `IsDeletedByReceiver` | Gönderenin / alıcının kalıcı olarak sildiği; iki taraf da sildiğinde kayıt veritabanından kaldırılır |
+Üyelik ve hata sayfaları layout kullanmaz; Login, Register, ConfirmMail ve ErrorPages sayfalarının kendi Style / Script ViewComponent'leri vardır.
 
 ---
 
@@ -205,34 +179,23 @@ Bir mesaj, gönderen ve alıcı için tek kayıt olarak tutulur. Her iki tarafı
 
 | Katman | Teknoloji |
 |---|---|
-| Backend | C#, ASP.NET Core MVC (.NET 9), ViewComponents |
-| Kimlik Doğrulama | ASP.NET Core Identity (`AppUser : IdentityUser`), Cookie Authentication |
+| Backend | C#, ASP.NET Core MVC (.NET 9) |
+| Kimlik Doğrulama | ASP.NET Core Identity, Cookie Authentication |
 | Veri Erişimi | Entity Framework Core 9 (Code First + Migrations) |
 | Veritabanı | Microsoft SQL Server Express |
 | E-posta | MailKit / MimeKit (Gmail SMTP) |
-| Doğrulama | Data Annotations, `ModelState`, AntiForgery |
 | Arayüz | Razor Views, Bootstrap 5, Bootstrap Icons, Vanilla JavaScript |
-| Grafik ve Güvenlik | Chart.js, DOMPurify |
 
 ---
 
 ## 📋 Gereksinimler
 
-- [.NET 9 SDK](https://dotnet.microsoft.com/download)
-- SQL Server (Express sürümü yeterli)
-- Entity Framework Core CLI aracı:
-
-```bash
-dotnet tool install --global dotnet-ef
-```
-
+- [.NET 9 SDK](https://dotnet.microsoft.com/download), SQL Server (Express sürümü yeterli)
+- Entity Framework Core CLI aracı: `dotnet tool install --global dotnet-ef`
 - SMTP gönderimi için bir Gmail hesabı ve [uygulama şifresi](https://myaccount.google.com/apppasswords)
 
 > [!IMPORTANT]
-> Veritabanı bağlantı dizesi [Context/IdentityContext.cs](MYAcademy_IdentityEmailProject/Context/IdentityContext.cs) dosyasında `server=.\SQLEXPRESS` olarak tanımlıdır. Farklı bir SQL Server örneği kullanıyorsanız çalıştırmadan önce `server` değerini kendi örneğinizle değiştirin (örn. `localhost` veya `(localdb)\MSSQLLocalDB`).
-
-> [!IMPORTANT]
-> SMTP hesap bilgileri `RegisterController`, `ConfirmMailController`, `PasswordChangeController` ve `MessageController` içinde tanımlıdır. Kendi Gmail adresiniz ve uygulama şifrenizle değiştirin.
+> Veritabanı bağlantı dizesi [Context/IdentityContext.cs](MYAcademy_IdentityEmailProject/Context/IdentityContext.cs) dosyasında `server=.\SQLEXPRESS` olarak tanımlıdır; farklı bir SQL Server örneği kullanıyorsanız değiştirin. SMTP hesap bilgileri `RegisterController`, `ConfirmMailController`, `PasswordChangeController` ve `MessageController` içindedir; kendi Gmail adresiniz ve uygulama şifrenizle değiştirin.
 
 ---
 
@@ -246,11 +209,7 @@ dotnet ef database update
 dotnet run
 ```
 
-- **Giriş ekranı:** `https://localhost:7239/`
-- **Kayıt ekranı:** `https://localhost:7239/Register/SignUp`
-- **Dashboard:** `https://localhost:7239/Dashboard/Index`
-
-`dotnet ef database update` komutu dört migration'ı sırayla uygular: `mig1` (Identity tabloları, Categories, Messages), `mig2` (ReceiverEmail kolon adı düzeltmesi), `mig3` (doğrulama kodu alanı) ve `mig4` (taslak, çöp kutusu ve kalıcı silme alanları, isteğe bağlı kategori). Visual Studio kullanıyorsanız aynı işlemi Package Manager Console'da `Update-Database` ile yapabilirsiniz.
+Uygulama `https://localhost:7239/` adresinde giriş ekranıyla açılır. Visual Studio kullanıyorsanız migration'ları Package Manager Console'da `Update-Database` ile de uygulayabilirsiniz.
 
 Kategoriler veritabanından gelir; ilk kurulumda `Categories` tablosuna kategori ekleyin:
 
@@ -260,12 +219,7 @@ VALUES (N'İş ve Kariyer'), (N'Kişisel'), (N'Finans'), (N'Eğitim'), (N'Teknol
 ```
 
 > [!NOTE]
-> E-posta doğrulaması zorunlu olduğu için doğrulanmamış hesaplar giriş yaptığında doğrulama ekranına yönlendirilir ve "Tekrar gönder" ile yeni kod alabilir. Test hesaplarını doğrudan onaylamak için:
-> ```sql
-> UPDATE AspNetUsers SET EmailConfirmed = 1 WHERE Email = 'ornek@mail.com';
-> ```
-
-Profil sayfasından yüklenen fotoğraflar `wwwroot/userimages` klasörüne kaydedilir.
+> Doğrulanmamış hesaplar giriş yaparken doğrulama ekranına yönlendirilir ve "Tekrar gönder" ile yeni kod alabilir.
 
 ---
 
