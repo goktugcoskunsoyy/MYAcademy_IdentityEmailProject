@@ -127,13 +127,28 @@ namespace MYAcademy_IdentityEmailProject.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MessageId"));
 
-                    b.Property<int>("CategoryId")
+                    b.Property<int?>("CategoryId")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsDeletedByReceiver")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeletedBySender")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsFavorite")
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsTrashByReceiver")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsTrashBySender")
                         .HasColumnType("bit");
 
                     b.Property<string>("MessageDetail")
@@ -299,9 +314,7 @@ namespace MYAcademy_IdentityEmailProject.Migrations
                 {
                     b.HasOne("MYAcademy_IdentityEmailProject.Entities.Category", "Category")
                         .WithMany("Messages")
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("CategoryId");
 
                     b.Navigation("Category");
                 });

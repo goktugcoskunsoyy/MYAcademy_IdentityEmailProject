@@ -1,44 +1,21 @@
 ﻿  <script>
-    /* ======================================================================
-       MAILORA — LOGIN (yalnızca frontend doğrulama ve simülasyon)
-       Gerçek uygulamada: AccountController.Login (POST)
-       → SignInManager.PasswordSignInAsync(user, model.Password, model.RememberMe, lockoutOnFailure: true)
-       ====================================================================== */
     const $ = (s, r = document) => r.querySelector(s);
     const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-    const esc = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
     const EMAIL_RE = /^[^\s@@<>()[\],;:"]+@@[^\s@@<>()[\],;:"]+\.[a-z]{2,}$/i;
-    const USERNAME_RE = /^[a-zA-Z0-9._-]{3,30}$/;
-    const DEMO_USER = { userName: 'demo', email: 'demo@mailora.com', firstName: 'Demo', password: 'Mailora!2026' };  // temsili: sunucu kontrolü simülasyonu
-
-    /* Hatalı deneme kilidi — ASP.NET Core Identity LockoutOptions ile uyumlu */
-    const MAX_ATTEMPTS = 5;
-    const LOCK_SECONDS = 30;
+    const USERNAME_RE = /^[a-zA-Z0-9._@@+-]{3,100}$/;
 
     const form = $('#loginForm');
     const val = id => $('#' + id).value;
     const touched = new Set();
-    let failed = 0;
-    let lockTimer = null;
 
-    /* ---------- Toast ---------- */
-    function toast(title, text = '', type = 'info', icon = 'bi-info-circle') {
-      const el = document.createElement('div');
-      el.className = `m-toast ${type}`;
-      el.innerHTML = `<span class="ti"><i class="bi ${icon}"></i></span><span><b>${title}</b>${text}</span>`;
-      $('#toastStack').appendChild(el);
-      setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 250); }, 3600);
-    }
-
-    /* ---------- Alan doğrulama ---------- */
     function validate(key) {
       const v = val(key).trim();
       switch (key) {
         case 'userNameOrEmail':
           if (!v) return 'Email veya kullanıcı adı zorunludur.';
           if (v.includes('@@')) return EMAIL_RE.test(v) ? '' : 'Geçerli bir email adresi girin (ör. ad@ornek.com).';
-          if (!USERNAME_RE.test(v)) return 'Geçerli bir kullanıcı adı girin (3–30 karakter; harf, rakam ve . _ -).';
+          if (!USERNAME_RE.test(v)) return 'Geçerli bir kullanıcı adı girin (en az 3 karakter; harf, rakam ve . _ -).';
           return '';
         case 'password':
           if (!val('password')) return 'Şifre alanı zorunludur.';
@@ -61,17 +38,6 @@
       return !err;
     }
 
-    /* ---------- Form uyarısı (validation summary) ---------- */
-    function showAlert(title, text, type = 'error', icon = 'bi-exclamation-octagon-fill') {
-      const box = $('#formAlert');
-      box.className = `form-alert ${type}`;
-      box.innerHTML = `<i class="bi ${icon}"></i><span><b>${title}</b>${text}</span>`;
-    }
-    function clearAlert() {
-      $('#formAlert').innerHTML = '';
-    }
-
-    /* ---------- Olaylar ---------- */
     const KEYS = ['userNameOrEmail', 'password'];
 
     KEYS.forEach(key => {
@@ -81,7 +47,7 @@
         if (touched.has(key)) paint(key);
       });
       el.addEventListener('blur', () => {
-        if (!el.value && !touched.has(key)) return;       // boş alandan geçişte hemen hata gösterme
+        if (!el.value && !touched.has(key)) return;
         touched.add(key);
         paint(key);
       });
@@ -92,7 +58,6 @@
       }
     });
 
-    // Şifre göster / gizle
     $$('[data-eye]').forEach(btn => btn.addEventListener('click', () => {
       const input = $('#' + btn.dataset.eye), show = input.type === 'password';
       input.type = show ? 'text' : 'password';
@@ -100,10 +65,9 @@
       btn.title = show ? 'Şifreyi gizle' : 'Şifreyi göster';
       btn.setAttribute('aria-label', btn.title);
       input.focus({ preventScroll: true });
-      const len = input.value.length; try { input.setSelectionRange(len, len); } catch (e) { /* yok say */ }
+      const len = input.value.length; try { input.setSelectionRange(len, len); } catch (e) { }
     }));
 
-    /* ---------- Şifre sıfırlama modal ---------- */
     const modal = $('#resetModal'), resetForm = $('#resetForm');
     let lastFocus = null;
 
@@ -121,13 +85,6 @@
       modal.setAttribute('aria-hidden', 'true');
       document.body.classList.remove('modal-open-lock');
       if (lastFocus) lastFocus.focus({ preventScroll: true });
-      setTimeout(restoreReset, 250);
-    }
-    function restoreReset() {
-      resetForm.hidden = false;
-      $('#resetSent').hidden = true;
-      $('#resetSubmit').hidden = false;
-      $('#resetCancel').textContent = 'Vazgeç';
       touched.delete('resetEmail');
       const field = $('[data-field="resetEmail"]');
       field.classList.remove('is-invalid');
@@ -140,30 +97,19 @@
     $('#resetEmail').addEventListener('input', () => { if (touched.has('resetEmail')) paint('resetEmail'); });
 
     resetForm.addEventListener('submit', e => {
-      e.preventDefault();
       touched.add('resetEmail');
-      if (!paint('resetEmail', { shake: true })) { $('#resetEmail').focus(); return; }
-
-      const btn = $('#resetSubmit'), email = val('resetEmail').trim();
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner-sm"></span><span class="lbl">Gönderiliyor…</span>';
-
+      if (!paint('resetEmail', { shake: true })) { e.preventDefault(); $('#resetEmail').focus(); return; }
+      const btn = $('#resetSubmit');
       setTimeout(() => {
-        btn.disabled = false;
-        btn.innerHTML = '<span class="lbl">Bağlantı Gönder</span><i class="bi bi-send"></i>';
-        btn.hidden = true;
-        resetForm.hidden = true;
-        $('#resetSentText').innerHTML = `<b>${esc(email)}</b> bir hesapla eşleşiyorsa, şifre sıfırlama bağlantısı birkaç dakika içinde gelen kutunuza ulaşacak.`;
-        $('#resetSent').hidden = false;
-        $('#resetCancel').textContent = 'Tamam';
-        $('#resetCancel').focus();
-      }, 900);
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-sm"></span><span class="lbl">Gönderiliyor…</span>';
+      });
     });
 
     document.addEventListener('keydown', e => {
       if (!modal.classList.contains('open')) return;
       if (e.key === 'Escape') { closeReset(); return; }
-      if (e.key === 'Tab') {                                   // odak modal içinde kalsın
+      if (e.key === 'Tab') {
         const f = $$('button, a[href], input', modal).filter(x => x.offsetParent !== null && !x.disabled);
         const first = f[0], last = f[f.length - 1];
         if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
@@ -171,75 +117,16 @@
       }
     });
 
-    /* ---------- Gönderim ---------- */
     form.addEventListener('submit', e => {
-      e.preventDefault();
-      if (lockTimer) return;
-
       KEYS.forEach(k => touched.add(k));
       const results = KEYS.map(k => paint(k, { shake: true }));
       const firstBad = KEYS.find((k, i) => !results[i]);
-      if (firstBad) { $('#' + firstBad).focus(); return; }
+      if (firstBad) { e.preventDefault(); $('#' + firstBad).focus(); return; }
 
-      clearAlert();
       const btn = $('#submitBtn');
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner-sm"></span><span class="lbl">Giriş yapılıyor…</span>';
-
-      // Simülasyon — şifre hiçbir yerde saklanmaz
-      const login = val('userNameOrEmail').trim().toLowerCase();
-      const ok = [DEMO_USER.userName, DEMO_USER.email].includes(login) && val('password') === DEMO_USER.password;
       setTimeout(() => {
-        if (ok) {
-          failed = 0;
-          showSuccess(DEMO_USER, $('#rememberMe').checked);
-          toast('Giriş başarılı', 'Gelen kutunuz hazırlanıyor.', 'success', 'bi-check2-circle');
-          return;
-        }
-        failed++;
-        resetSubmitBtn();
-        $('#password').value = '';
-        if (failed >= MAX_ATTEMPTS) { lockForm(); return; }
-        showAlert('Giriş başarısız', `Email/kullanıcı adı veya şifre hatalı. ${MAX_ATTEMPTS - failed} deneme hakkınız kaldı.`);
-        $('#password').focus();
-      }, 1100);
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-sm"></span><span class="lbl">Giriş yapılıyor…</span>';
+      });
     });
-
-    function resetSubmitBtn() {
-      const btn = $('#submitBtn');
-      btn.disabled = false;
-      btn.innerHTML = '<span class="lbl">Giriş Yap</span><i class="bi bi-arrow-right"></i>';
-    }
-
-    function lockForm() {
-      const btn = $('#submitBtn');
-      let s = LOCK_SECONDS;
-      btn.disabled = true;
-      const tick = () => {
-        if (s <= 0) { clearInterval(lockTimer); lockTimer = null; failed = 0; clearAlert(); resetSubmitBtn(); return; }
-        showAlert('Hesap geçici olarak kilitlendi', `Çok fazla hatalı deneme yapıldı. ${s} sn sonra tekrar deneyin.`, 'warn', 'bi-shield-lock-fill');
-        btn.innerHTML = `<i class="bi bi-lock"></i><span class="lbl">${s} sn bekleyin</span>`;
-        s--;
-      };
-      tick();
-      lockTimer = setInterval(tick, 1000);
-    }
-
-    function showSuccess(user, remember) {
-      $('#loginView').innerHTML = `
-        <div class="success-view">
-          <div class="success-ic"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M13 25l7 7 15-16"/></svg></div>
-          <h2>Tekrar hoş geldiniz, ${esc(user.firstName)}!</h2>
-          <p>Giriş başarılı. Gelen kutunuz hazırlanıyor.</p>
-          ${remember ? '<div class="session-note"><i class="bi bi-shield-check"></i> Bu cihazda oturumunuz 30 gün açık kalacak</div>' : ''}
-          <div class="redirect"><div class="redirect-bar"><span></span></div><small>Yönlendiriliyorsunuz…</small></div>
-          <button type="button" class="btn-primary-x" style="margin-top:0" id="inboxBtn"><span class="lbl">Gelen Kutusuna Git</span><i class="bi bi-arrow-right"></i></button>
-          <button type="button" class="btn-ghost" style="width:100%;margin-top:10px" id="switchBtn"><i class="bi bi-arrow-left-right"></i> Farklı bir hesapla giriş yap</button>
-        </div>`;
-      setTimeout(() => { const s = $('.redirect small'); if (s) s.textContent = 'Inbox ekranı ayrı bir sayfa olarak hazırlanacak.'; }, 3000);
-      $('#inboxBtn').addEventListener('click', () =>
-        toast('Gelen kutusu', 'Inbox ekranı ayrı bir sayfa olarak hazırlanacak.', 'info', 'bi-inbox'));
-      $('#switchBtn').addEventListener('click', () => location.reload());
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
   </script>

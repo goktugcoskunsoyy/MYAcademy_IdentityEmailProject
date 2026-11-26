@@ -1,1 +1,37 @@
-﻿
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+
+@await Component.InvokeAsync("_ErrorPagesStyleComponentPartial")
+
+<body>
+
+    <div class="auth-bg" aria-hidden="true"><span class="g1"></span><span class="g2"></span><span class="g3"></span></div>
+
+    <main class="page">
+        <a class="brand" asp-controller="Dashboard" asp-action="Index" aria-label="Mailora ana sayfa">
+            <span class="brand-logo"><i class="bi bi-envelope-paper-heart-fill"></i></span>
+            <span class="brand-name">Mail<span>ora</span></span>
+        </a>
+
+        <section class="card-x">
+            <div class="err-ic rose"><i class="bi bi-shield-lock"></i></div>
+            <div class="err-code">403</div>
+            <h1>Bu içeriğe erişim izniniz yok</h1>
+            <p class="sub">Görüntülemeye çalıştığınız mesaj veya sayfa başka bir kullanıcıya ait. Mailora'da her kullanıcı yalnızca kendi mesajlarına erişebilir.</p>
+
+            <div class="err-actions">
+                <a class="btn-primary-x" asp-controller="Message" asp-action="Inbox"><i class="bi bi-inbox"></i> Gelen Kutusuna Dön</a>
+                <a class="btn-ghost" asp-controller="Dashboard" asp-action="Index"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+            </div>
+        </section>
+
+        <div class="page-foot">© 2026 Mailora · Hata Kodu 403 · Erişim Engellendi</div>
+    </main>
+
+    <script>document.title = '403 · Erişim Engellendi · Mailora';</script>
+</body>
+</html>

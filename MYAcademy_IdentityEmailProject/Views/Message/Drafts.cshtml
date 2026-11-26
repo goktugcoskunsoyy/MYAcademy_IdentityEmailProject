@@ -1,0 +1,81 @@
+﻿@model List<Message>
+@{
+    ViewData["Title"] = "Taslaklar";
+    ViewData["ActiveMenu"] = "drafts";
+    Layout = "~/Views/MessageLayout/Index.cshtml";
+
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
+}
+
+<section class="inbox" id="drafts">
+
+    <div class="panel list-panel">
+
+        <div class="list-head">
+            <div class="list-title">
+                <div>
+                    <h1>Taslaklar</h1>
+                    <div class="sub">Kaydedip daha sonra göndermek üzere beklettiğiniz mesajlar</div>
+                </div>
+                <span class="count-pill"><i class="bi bi-file-earmark-text"></i> @Model.Count taslak</span>
+            </div>
+        </div>
+
+        <form id="bulkForm" method="post">
+            <input type="hidden" name="returnUrl" value="@returnUrl">
+        </form>
+
+        <div class="bulk-bar">
+            <input type="checkbox" class="m-check" id="checkAll" aria-label="Tümünü seç">
+            <span class="sel-info" id="selInfo">Tümünü seç</span>
+            <span class="spacer"></span>
+            <button type="submit" form="bulkForm" formaction="@Url.Action("MoveToTrash", "Message")" class="tool-btn" data-bulk title="Çöp kutusuna taşı" disabled><i class="bi bi-trash3"></i></button>
+            <a href="@returnUrl" class="tool-btn" title="Yenile"><i class="bi bi-arrow-clockwise"></i></a>
+        </div>
+
+        <div class="msg-list" id="msgList">
+            @foreach (var item in Model)
+            {
+                var receiverName = string.IsNullOrEmpty(item.ReceiverEmail) ? "(Alıcı yok)" : item.ReceiverEmail;
+                var snippet = MessageHelper.Snippet(item.MessageDetail);
+
+                <article class="msg-item" data-href="@Url.Action("EditDraft", "Message", new { id = item.MessageId })" tabindex="0" title="Taslağı düzenle">
+                    <div class="lead">
+                        <input type="checkbox" class="m-check row-check" name="ids" value="@item.MessageId" form="bulkForm" aria-label="Seç">
+                    </div>
+                    <span class="avatar av-peach"><i class="bi bi-pencil"></i></span>
+                    <div class="mi-sender">
+                        <span class="sender"><span class="who-label">Kime:</span>@receiverName</span>
+                    </div>
+                    <div class="mi-main">
+                        <span class="subject">@(string.IsNullOrEmpty(item.Subject) ? "(Konu yok)" : item.Subject)</span>
+                        <span class="snippet">@(string.IsNullOrEmpty(snippet) ? "(İçerik yok)" : snippet)</span>
+                    </div>
+                    <div class="mi-meta">
+                        <span class="tag tag-fatura"><i class="bi bi-file-earmark-text"></i> Taslak</span>
+                        @if (item.Category != null)
+                        {
+                            <span class="tag" style="@MessageHelper.CategoryStyle(item.CategoryId)">@item.Category.CategoryName</span>
+                        }
+                    </div>
+                    <span class="time" title="Son kayıt: @MessageHelper.LongTime(item.SendDate)">@MessageHelper.ShortTime(item.SendDate)</span>
+                </article>
+            }
+
+            @if (!Model.Any())
+            {
+                <div class="empty-list">
+                    <div class="ic"><i class="bi bi-file-earmark-text"></i></div>
+                    <h6>Taslağınız yok</h6>
+                    <div>Yeni Mesaj ekranında "Taslak Olarak Kaydet" ile kaydettiğiniz mesajlar burada listelenir.</div>
+                </div>
+            }
+        </div>
+
+        <div class="list-foot">
+            <span class="range" id="rangeInfo"></span>
+            <div class="pager" id="pager"></div>
+        </div>
+    </div>
+
+</section>

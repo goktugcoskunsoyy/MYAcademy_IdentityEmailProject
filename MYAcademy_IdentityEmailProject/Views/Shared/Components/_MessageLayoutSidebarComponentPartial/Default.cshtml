@@ -1,51 +1,52 @@
-﻿<!-- =====================================================================
-      SHARED SIDEBAR
-      ASP.NET Core MVC: Views/Shared/_Sidebar.cshtml (partial) — _Layout.cshtml içinde
-      Menü linkleri ileride asp-controller / asp-action ile değiştirilecek.
-      ===================================================================== -->
+﻿@model List<Category>
+@{
+    int inboxCount = ViewBag.InboxCount;
+    int unreadCount = ViewBag.UnreadCount;
+    int readPercent = inboxCount == 0 ? 0 : (inboxCount - unreadCount) * 100 / inboxCount;
+}
+
 <aside class="app-sidebar" id="appSidebar" aria-label="Ana menü">
-    <a class="brand" data-page="inbox" href="#inbox">
+    <a class="brand" asp-controller="Dashboard" asp-action="Index">
         <div class="brand-logo"><i class="bi bi-envelope-paper-heart-fill"></i></div>
         <div class="brand-name">Mail<span>ora</span></div>
     </a>
 
-    <button class="btn-compose" data-page="compose" type="button" data-tip="Yeni Mesaj">
+    <a class="btn-compose" data-page="compose" asp-controller="Message" asp-action="CreateMessage" data-tip="Yeni Mesaj">
         <i class="bi bi-pencil-square"></i> <span class="lbl">Yeni Mesaj</span>
-    </button>
+    </a>
 
     <div class="nav-section-title">Menü</div>
     <ul class="side-nav">
-        <li><a class="side-link" data-page="dashboard" href="#dashboard" data-tip="Dashboard"><i class="bi bi-grid-1x2"></i> <span class="lbl">Dashboard</span></a></li>
-        <li><a class="side-link" data-page="inbox" href="#inbox" data-tip="Gelen Kutusu"><i class="bi bi-inbox"></i> <span class="lbl">Gelen Kutusu</span> <span class="side-badge" id="badgeInbox"></span></a></li>
-        <li><a class="side-link" data-page="sent" href="#sent" data-tip="Gönderilenler"><i class="bi bi-send"></i> <span class="lbl">Gönderilenler</span></a></li>
-        <li><a class="side-link" data-page="drafts" href="#drafts" data-tip="Taslaklar"><i class="bi bi-file-earmark-text"></i> <span class="lbl">Taslaklar</span> <span class="side-badge muted">3</span></a></li>
-        <li><a class="side-link" data-page="starred" href="#starred" data-tip="Yıldızlı Mesajlar"><i class="bi bi-star"></i> <span class="lbl">Yıldızlı Mesajlar</span> <span class="side-badge muted" id="badgeStarred"></span></a></li>
-        <li><a class="side-link" data-page="trash" href="#trash" data-tip="Çöp Kutusu"><i class="bi bi-trash3"></i> <span class="lbl">Çöp Kutusu</span> <span class="side-badge muted" id="badgeTrash"></span></a></li>
+        <li><a class="side-link" data-page="dashboard" asp-controller="Dashboard" asp-action="Index" data-tip="Dashboard"><i class="bi bi-grid-1x2"></i> <span class="lbl">Dashboard</span></a></li>
+        <li><a class="side-link" data-page="inbox" asp-controller="Message" asp-action="Inbox" data-tip="Gelen Kutusu"><i class="bi bi-inbox"></i> <span class="lbl">Gelen Kutusu</span> <span class="side-badge" id="badgeInbox">@(unreadCount > 0 ? unreadCount.ToString() : "")</span></a></li>
+        <li><a class="side-link" data-page="sent" asp-controller="Message" asp-action="Sendbox" data-tip="Gönderilenler"><i class="bi bi-send"></i> <span class="lbl">Gönderilenler</span></a></li>
+        <li><a class="side-link" data-page="drafts" asp-controller="Message" asp-action="Drafts" data-tip="Taslaklar"><i class="bi bi-file-earmark-text"></i> <span class="lbl">Taslaklar</span> <span class="side-badge muted">@(ViewBag.DraftCount > 0 ? ViewBag.DraftCount.ToString() : "")</span></a></li>
+        <li><a class="side-link" data-page="starred" asp-controller="Message" asp-action="Favorites" data-tip="Yıldızlı Mesajlar"><i class="bi bi-star"></i> <span class="lbl">Yıldızlı Mesajlar</span> <span class="side-badge muted" id="badgeStarred">@(ViewBag.FavoriteCount > 0 ? ViewBag.FavoriteCount.ToString() : "")</span></a></li>
+        <li><a class="side-link" data-page="trash" asp-controller="Message" asp-action="Trash" data-tip="Çöp Kutusu"><i class="bi bi-trash3"></i> <span class="lbl">Çöp Kutusu</span> <span class="side-badge muted" id="badgeTrash">@(ViewBag.TrashCount > 0 ? ViewBag.TrashCount.ToString() : "")</span></a></li>
     </ul>
 
     <div class="nav-section-title">Hesap</div>
     <ul class="side-nav">
-        <li><a class="side-link" data-page="profile" href="#profile" data-tip="Profilim"><i class="bi bi-person-circle"></i> <span class="lbl">Profilim</span></a></li>
-        <li><a class="side-link" data-page="settings" href="#settings" data-tip="Ayarlar"><i class="bi bi-gear"></i> <span class="lbl">Ayarlar</span></a></li>
+        <li><a class="side-link" data-page="profile" asp-controller="Profile" asp-action="Index" data-tip="Profilim"><i class="bi bi-person-circle"></i> <span class="lbl">Profilim</span></a></li>
     </ul>
 
-    <div class="nav-section-title">Etiketler</div>
+    <div class="nav-section-title">Kategoriler</div>
     <ul class="side-labels">
-        <li><a data-label="İş" data-tip="İş"><span class="dot" style="background:#8B7FD6"></span> <span class="lbl">İş</span></a></li>
-        <li><a data-label="Kişisel" data-tip="Kişisel"><span class="dot" style="background:#5CC09A"></span> <span class="lbl">Kişisel</span></a></li>
-        <li><a data-label="Fatura" data-tip="Fatura"><span class="dot" style="background:#EBA27A"></span> <span class="lbl">Fatura</span></a></li>
+        @foreach (var item in Model)
+        {
+            <li><a asp-controller="Message" asp-action="Inbox" asp-route-categoryId="@item.CategoryId" data-tip="@item.CategoryName"><span class="dot" style="background:@MessageHelper.CategoryColor(item.CategoryId)"></span> <span class="lbl">@item.CategoryName</span></a></li>
+        }
     </ul>
 
-    <div class="storage-card" data-tip="Depolama · 9,3 / 15 GB">
+    <div class="storage-card" data-tip="Okunma Durumu · %@readPercent">
         <div class="top">
-            <div class="ic"><i class="bi bi-cloud"></i></div>
+            <div class="ic"><i class="bi bi-envelope-check"></i></div>
             <div>
-                <div class="t1">Depolama</div>
-                <div class="t2">9,3 GB / 15 GB kullanıldı</div>
+                <div class="t1">Okunma Durumu</div>
+                <div class="t2">@(inboxCount - unreadCount) / @inboxCount mesaj okundu</div>
             </div>
         </div>
-        <div class="storage-bar"><span></span></div>
+        <div class="storage-bar"><span style="width:@(readPercent)%"></span></div>
     </div>
 </aside>
 <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
-<!-- /SHARED SIDEBAR -->

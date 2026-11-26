@@ -1,0 +1,176 @@
+﻿@model Message
+@{
+    ViewData["Title"] = string.IsNullOrEmpty(Model.Subject) ? "Mesaj" : Model.Subject;
+    Layout = "~/Views/MessageLayout/Index.cshtml";
+
+    bool isSender = ViewBag.IsSender;
+    bool isReceiver = ViewBag.IsReceiver;
+    bool isTrash = ViewBag.IsTrash;
+    string senderNameSurname = ViewBag.SenderNameSurname;
+    string? senderImageUrl = ViewBag.SenderImageUrl;
+    string receiverNameSurname = ViewBag.ReceiverNameSurname;
+    string? userImageUrl = ViewBag.UserImageUrl;
+    string userNameSurname = ViewBag.UserNameSurname;
+
+    string backAction = isTrash ? "Trash" : (isReceiver ? "Inbox" : "Sendbox");
+    string backText = isTrash ? "Çöp Kutusu" : (isReceiver ? "Gelen Kutusu" : "Gönderilenler");
+    string backIcon = isTrash ? "bi-trash3" : (isReceiver ? "bi-inbox" : "bi-send");
+    ViewData["ActiveMenu"] = isTrash ? "trash" : (isReceiver ? "inbox" : "sent");
+
+    var backUrl = Url.Action(backAction, "Message");
+    var currentUrl = Context.Request.Path + Context.Request.QueryString;
+    var contactEmail = isReceiver ? Model.SenderEmail : Model.ReceiverEmail;
+    var contactName = isReceiver ? senderNameSurname : receiverNameSurname;
+    var replySubject = Model.Subject.StartsWith("Re:") ? Model.Subject : "Re: " + Model.Subject;
+}
+
+<form id="trashForm" method="post" asp-action="MoveToTrash">
+    <input type="hidden" name="ids" value="@Model.MessageId">
+    <input type="hidden" name="returnUrl" value="@backUrl">
+</form>
+<form id="restoreForm" method="post" asp-action="RestoreMessage">
+    <input type="hidden" name="ids" value="@Model.MessageId">
+    <input type="hidden" name="returnUrl" value="@currentUrl">
+</form>
+<form id="deleteForm" method="post" asp-action="DeleteMessage">
+    <input type="hidden" name="ids" value="@Model.MessageId">
+    <input type="hidden" name="returnUrl" value="@Url.Action("Trash", "Message")">
+</form>
+@if (isReceiver)
+{
+    <form id="unreadForm" method="post" asp-action="MarkAsUnread">
+        <input type="hidden" name="ids" value="@Model.MessageId">
+        <input type="hidden" name="returnUrl" value="@backUrl">
+    </form>
+    <form id="favoriteForm" method="post" asp-action="ToggleFavorite" asp-route-id="@Model.MessageId">
+        <input type="hidden" name="returnUrl" value="@currentUrl">
+    </form>
+}
+
+<section class="msg-page" id="msgPage">
+
+    <div class="mp-top">
+        <a href="@backUrl" class="btn-soft mp-back" title="@backText sayfasına dön"><i class="bi bi-arrow-left"></i><span>@backText</span></a>
+        <div class="mp-toolbar" role="toolbar" aria-label="Mesaj işlemleri">
+            @if (isTrash)
+            {
+                <button type="submit" form="restoreForm" class="tool-btn" title="Geri yükle"><i class="bi bi-arrow-counterclockwise"></i></button>
+                <button type="submit" form="deleteForm" class="tool-btn" title="Kalıcı olarak sil" data-confirm="Bu mesaj kalıcı olarak silinecek. Bu işlem geri alınamaz. Devam edilsin mi?"><i class="bi bi-x-octagon"></i></button>
+            }
+            else
+            {
+                <a class="tool-btn" asp-action="ReplyMessage" asp-route-id="@Model.MessageId" title="Yanıtla"><i class="bi bi-reply"></i></a>
+                <a class="tool-btn" asp-action="ForwardMessage" asp-route-id="@Model.MessageId" title="İlet"><i class="bi bi-forward"></i></a>
+                <span class="tb-divider"></span>
+                if (isReceiver)
+                {
+                    <button type="submit" form="unreadForm" class="tool-btn" title="Okunmadı olarak işaretle"><i class="bi bi-envelope"></i></button>
+                }
+                <button type="submit" form="trashForm" class="tool-btn" title="Çöp kutusuna taşı"><i class="bi bi-trash3"></i></button>
+            }
+            <button type="button" class="tool-btn hide-xs" data-print title="Yazdır"><i class="bi bi-printer"></i></button>
+        </div>
+    </div>
+
+    <div class="mp-grid">
+        <article class="mp-card">
+            <div class="pv-subject-row">
+                <h1 class="pv-subject">@(string.IsNullOrEmpty(Model.Subject) ? "(Konu yok)" : Model.Subject)</h1>
+                @if (isReceiver && !isTrash)
+                {
+                    <button type="submit" form="favoriteForm" class="star-btn @(Model.IsFavorite ? "on" : "")" title="@(Model.IsFavorite ? "Yıldızı kaldır" : "Yıldızla")"><i class="bi @(Model.IsFavorite ? "bi-star-fill" : "bi-star")"></i></button>
+                }
+            </div>
+            <div class="mb-3 d-flex gap-2 flex-wrap">
+                @if (Model.Category != null)
+                {
+                    <span class="tag" style="@MessageHelper.CategoryStyle(Model.CategoryId)"><i class="bi bi-tag"></i> @Model.Category.CategoryName</span>
+                }
+                <span class="tag" style="background:var(--bg);color:var(--muted)"><i class="bi @backIcon"></i> @backText</span>
+            </div>
+
+            <div class="pv-sender">
+                <span class="avatar lg @MessageHelper.AvatarColor(Model.SenderEmail)">
+                    @if (!string.IsNullOrEmpty(senderImageUrl))
+                    {
+                        <img src="@senderImageUrl" alt="@senderNameSurname">
+                    }
+                    else
+                    {
+                        @MessageHelper.Initials(senderNameSurname)
+                    }
+                </span>
+                <div class="who">
+                    <div class="nm">@senderNameSurname <span class="em">&lt;@Model.SenderEmail&gt;</span></div>
+                    <div class="to"><b>Kime:</b> @receiverNameSurname &lt;@Model.ReceiverEmail&gt;</div>
+                </div>
+                <div class="dt"><b>@Model.SendDate.ToString("d MMMM yyyy", new System.Globalization.CultureInfo("tr-TR"))</b> @Model.SendDate.ToString("dddd HH:mm", new System.Globalization.CultureInfo("tr-TR"))</div>
+            </div>
+
+            <div class="pv-body" data-html="@Model.MessageDetail"></div>
+
+            <div class="pv-actions">
+                @if (isTrash)
+                {
+                    <button type="submit" form="restoreForm" class="btn-soft primary"><i class="bi bi-arrow-counterclockwise"></i> Geri Yükle</button>
+                    <button type="submit" form="deleteForm" class="btn-soft danger" data-confirm="Bu mesaj kalıcı olarak silinecek. Bu işlem geri alınamaz. Devam edilsin mi?"><i class="bi bi-x-octagon"></i> Kalıcı Olarak Sil</button>
+                }
+                else
+                {
+                    <a class="btn-soft primary" asp-action="ReplyMessage" asp-route-id="@Model.MessageId"><i class="bi bi-reply-fill"></i> Yanıtla</a>
+                    <a class="btn-soft" asp-action="ForwardMessage" asp-route-id="@Model.MessageId"><i class="bi bi-forward-fill"></i> İlet</a>
+                    if (isReceiver)
+                    {
+                        <button type="submit" form="favoriteForm" class="btn-soft"><i class="bi @(Model.IsFavorite ? "bi-star-fill" : "bi-star")" style="@(Model.IsFavorite ? "color:#F2B84B" : "")"></i> @(Model.IsFavorite ? "Yıldızı Kaldır" : "Yıldızla")</button>
+                    }
+                    <button type="submit" form="trashForm" class="btn-soft danger"><i class="bi bi-trash3"></i> Sil</button>
+                }
+            </div>
+
+            @if (isReceiver && !isTrash)
+            {
+                <form class="quick-reply" method="post" asp-action="CreateMessage">
+                    <span class="avatar sm av-user">
+                        @if (!string.IsNullOrEmpty(userImageUrl))
+                        {
+                            <img src="@userImageUrl" alt="@userNameSurname">
+                        }
+                        else
+                        {
+                            @MessageHelper.Initials(userNameSurname)
+                        }
+                    </span>
+                    <input type="hidden" name="ReceiverEmail" value="@Model.SenderEmail">
+                    <input type="hidden" name="Subject" value="@replySubject">
+                    <input type="hidden" name="CategoryId" value="@Model.CategoryId">
+                    <input type="hidden" name="submitType" value="send">
+                    <input type="text" name="MessageDetail" placeholder="@senderNameSurname kişisine hızlı yanıt yazın…" aria-label="Hızlı yanıt" maxlength="2000" required>
+                    <button type="submit" title="Gönder"><i class="bi bi-send-fill"></i></button>
+                </form>
+            }
+        </article>
+
+        <aside class="mp-side">
+            <div class="mp-side-card">
+                <h6>@(isReceiver ? "Gönderen" : "Alıcı")</h6>
+                <div class="mp-contact">
+                    <span class="avatar lg @MessageHelper.AvatarColor(contactEmail)">@MessageHelper.Initials(contactName)</span>
+                    <div style="min-width:0">
+                        <div class="nm">@contactName</div>
+                        <div class="em">@contactEmail</div>
+                    </div>
+                </div>
+                <div class="mp-contact-actions">
+                    <a class="btn-soft" asp-action="CreateMessage" asp-route-receiverEmail="@contactEmail"><i class="bi bi-send"></i> Mesaj Gönder</a>
+                    <button type="button" class="btn-soft" data-copy="@contactEmail"><i class="bi bi-copy"></i> Kopyala</button>
+                </div>
+                <ul class="mp-facts">
+                    <li><span class="k"><i class="bi bi-tag"></i> Kategori</span><span class="v">@(Model.Category != null ? Model.Category.CategoryName : "Yok")</span></li>
+                    <li><span class="k"><i class="bi bi-star"></i> Durum</span><span class="v">@(Model.IsFavorite ? "Yıldızlı" : "Normal")</span></li>
+                    <li><span class="k"><i class="bi bi-envelope-open"></i> Okunma</span><span class="v">@(Model.IsRead ? "Okundu" : "Okunmadı")</span></li>
+                    <li><span class="k"><i class="bi bi-clock"></i> @(isReceiver ? "Alındı" : "Gönderildi")</span><span class="v">@MessageHelper.LongTime(Model.SendDate)</span></li>
+                </ul>
+            </div>
+        </aside>
+    </div>
+</section>

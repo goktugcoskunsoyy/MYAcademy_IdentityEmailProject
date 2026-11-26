@@ -1,1 +1,46 @@
-﻿
+﻿@{
+    Layout = null;
+    bool isAuthenticated = User.Identity != null && User.Identity.IsAuthenticated;
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+
+@await Component.InvokeAsync("_ErrorPagesStyleComponentPartial")
+
+<body>
+
+    <div class="auth-bg" aria-hidden="true"><span class="g1"></span><span class="g2"></span><span class="g3"></span></div>
+
+    <main class="page">
+        <a class="brand" asp-controller="Login" asp-action="SignIn" aria-label="Mailora ana sayfa">
+            <span class="brand-logo"><i class="bi bi-envelope-paper-heart-fill"></i></span>
+            <span class="brand-name">Mail<span>ora</span></span>
+        </a>
+
+        <section class="card-x">
+            <div class="err-ic peach"><i class="bi bi-envelope-x"></i></div>
+            <div class="err-code">404</div>
+            <h1>Aradığınız sayfa bulunamadı</h1>
+            <p class="sub">Bu sayfa veya mesaj silinmiş, taşınmış ya da hiç var olmamış olabilir. Adresi kontrol edip tekrar deneyin.</p>
+
+            <div class="err-actions">
+                @if (isAuthenticated)
+                {
+                    <a class="btn-primary-x" asp-controller="Message" asp-action="Inbox"><i class="bi bi-inbox"></i> Gelen Kutusuna Dön</a>
+                    <a class="btn-ghost" asp-controller="Dashboard" asp-action="Index"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+                }
+                else
+                {
+                    <a class="btn-primary-x" asp-controller="Login" asp-action="SignIn"><i class="bi bi-box-arrow-in-right"></i> Giriş Yap</a>
+                    <a class="btn-ghost" asp-controller="Register" asp-action="SignUp"><i class="bi bi-person-plus"></i> Hesap Oluştur</a>
+                }
+            </div>
+        </section>
+
+        <div class="page-foot">© 2026 Mailora · Hata Kodu 404 · Sayfa Bulunamadı</div>
+    </main>
+
+    <script>document.title = '404 · Sayfa Bulunamadı · Mailora';</script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+﻿@model List<Message>
+@{
+    ViewData["Title"] = "Yıldızlı Mesajlar";
+    ViewData["ActiveMenu"] = "starred";
+    Layout = "~/Views/MessageLayout/Index.cshtml";
+
+    var users = ViewBag.Users as List<AppUser> ?? new List<AppUser>();
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
+}
+
+<section class="inbox" id="favorites">
+
+    <div class="panel list-panel">
+
+        <div class="list-head">
+            <div class="list-title">
+                <div>
+                    <h1>Yıldızlı Mesajlar</h1>
+                    <div class="sub">Önemli olarak işaretlediğiniz mesajlar</div>
+                </div>
+                <span class="count-pill"><i class="bi bi-star-fill"></i> @Model.Count mesaj</span>
+            </div>
+        </div>
+
+        <form id="bulkForm" method="post">
+            <input type="hidden" name="returnUrl" value="@returnUrl">
+        </form>
+
+        <div class="bulk-bar">
+            <input type="checkbox" class="m-check" id="checkAll" aria-label="Tümünü seç">
+            <span class="sel-info" id="selInfo">Tümünü seç</span>
+            <span class="spacer"></span>
+            <button type="submit" form="bulkForm" formaction="@Url.Action("MarkAsRead", "Message")" class="tool-btn" data-bulk title="Okundu olarak işaretle" disabled><i class="bi bi-envelope-open"></i></button>
+            <button type="submit" form="bulkForm" formaction="@Url.Action("MarkAsUnread", "Message")" class="tool-btn" data-bulk title="Okunmadı olarak işaretle" disabled><i class="bi bi-envelope"></i></button>
+            <button type="submit" form="bulkForm" formaction="@Url.Action("MoveToTrash", "Message")" class="tool-btn" data-bulk title="Çöp kutusuna taşı" disabled><i class="bi bi-trash3"></i></button>
+            <a href="@returnUrl" class="tool-btn" title="Yenile"><i class="bi bi-arrow-clockwise"></i></a>
+        </div>
+
+        <div class="msg-list" id="msgList">
+            @foreach (var item in Model)
+            {
+                var sender = users.FirstOrDefault(x => x.Email == item.SenderEmail);
+                var senderName = sender != null ? sender.Name + " " + sender.Surname : item.SenderEmail;
+
+                <article class="msg-item @(item.IsRead ? "" : "unread")" data-href="@Url.Action("MessageDetail", "Message", new { id = item.MessageId })" tabindex="0" title="Mesajı aç">
+                    <div class="lead">
+                        <input type="checkbox" class="m-check row-check" name="ids" value="@item.MessageId" form="bulkForm" aria-label="Seç">
+                        <button class="star-btn on" type="submit" form="bulkForm" formaction="@Url.Action("ToggleFavorite", "Message", new { id = item.MessageId })" aria-label="Yıldızı kaldır" title="Yıldızı kaldır">
+                            <i class="bi bi-star-fill"></i>
+                        </button>
+                    </div>
+                    <span class="avatar @MessageHelper.AvatarColor(item.SenderEmail)">
+                        @if (sender != null && !string.IsNullOrEmpty(sender.ImageUrl))
+                        {
+                            <img src="@sender.ImageUrl" alt="@senderName">
+                        }
+                        else
+                        {
+                            @MessageHelper.Initials(senderName)
+                        }
+                    </span>
+                    <div class="mi-sender">
+                        <span class="sender" title="@item.SenderEmail">@senderName</span>
+                        @if (!item.IsRead)
+                        {
+                            <span class="unread-dot"></span>
+                        }
+                    </div>
+                    <div class="mi-main">
+                        <span class="subject">@item.Subject</span>
+                        <span class="snippet">@MessageHelper.Snippet(item.MessageDetail)</span>
+                    </div>
+                    <div class="mi-meta">
+                        @if (item.Category != null)
+                        {
+                            <span class="tag" style="@MessageHelper.CategoryStyle(item.CategoryId)">@item.Category.CategoryName</span>
+                        }
+                    </div>
+                    <span class="time" title="@MessageHelper.LongTime(item.SendDate)">@MessageHelper.ShortTime(item.SendDate)</span>
+                </article>
+            }
+
+            @if (!Model.Any())
+            {
+                <div class="empty-list">
+                    <div class="ic"><i class="bi bi-star"></i></div>
+                    <h6>Yıldızlı mesajınız yok</h6>
+                    <div>Gelen kutunuzdaki mesajları yıldızlayarak burada bir arada görebilirsiniz.</div>
+                </div>
+            }
+        </div>
+
+        <div class="list-foot">
+            <span class="range" id="rangeInfo"></span>
+            <div class="pager" id="pager"></div>
+        </div>
+    </div>
+
+</section>

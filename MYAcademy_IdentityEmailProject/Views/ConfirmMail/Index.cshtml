@@ -1,0 +1,110 @@
+﻿@model ConfirmMailViewModel
+@{
+    Layout = null;
+    bool isConfirmed = ViewBag.IsConfirmed ?? false;
+    var errors = ViewData.ModelState.Values.SelectMany(x => x.Errors).Select(x => x.ErrorMessage).ToList();
+    string? codeSent = TempData["CodeSent"] as string;
+    string? error = TempData["Error"] as string;
+
+    string MaskEmail(string? email)
+    {
+        if (string.IsNullOrEmpty(email) || !email.Contains('@'))
+        {
+            return email ?? "";
+        }
+        var parts = email.Split('@');
+        var user = parts[0];
+        var visible = user.Length <= 2 ? user.Substring(0, 1) : user[0] + "***" + user[user.Length - 1];
+        return visible + "@" + parts[1];
+    }
+
+    var maskedEmail = MaskEmail(Model.Email);
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+
+@await Component.InvokeAsync("_ConfirmMailStyleComponentPartial")
+
+<body data-toast-success="@codeSent" data-toast-error="@error" data-cooldown="@(string.IsNullOrEmpty(codeSent) ? 0 : 60)">
+
+    <div class="auth-bg" aria-hidden="true"><span class="g1"></span><span class="g2"></span><span class="g3"></span></div>
+
+    <main class="page">
+        <a class="brand" asp-controller="Login" asp-action="SignIn" aria-label="Mailora giriş sayfası">
+            <span class="brand-logo"><i class="bi bi-envelope-paper-heart-fill"></i></span>
+            <span class="brand-name">Mail<span>ora</span></span>
+        </a>
+
+        <section class="card-x" id="card">
+            @if (isConfirmed)
+            {
+                <div class="success">
+                    <div class="success-ic"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M13 25l7 7 15-16" /></svg></div>
+                    <h1>E-posta Adresiniz Doğrulandı!</h1>
+                    <p class="sub"><b>@maskedEmail</b> adresi başarıyla doğrulandı. Artık Mailora hesabınıza giriş yapabilirsiniz.</p>
+                    <a class="btn-primary-x" asp-controller="Login" asp-action="SignIn" style="text-decoration:none"><i class="bi bi-box-arrow-in-right"></i><span>Giriş Yap</span></a>
+                    <p class="redirect-note" id="redirectNote" data-redirect="@Url.Action("SignIn", "Login")">5 saniye içinde giriş sayfasına yönlendirileceksiniz.</p>
+                </div>
+            }
+            else
+            {
+                <div id="verifyView">
+                    <div class="mail-ic" aria-hidden="true">
+                        <span class="dot d1"></span><span class="dot d2"></span><span class="dot d3"></span>
+                        <div class="circle"><i class="bi bi-envelope-open-heart"></i></div>
+                        <span class="badge-ic"><i class="bi bi-shield-check"></i></span>
+                    </div>
+
+                    <h1>E-posta Adresinizi Doğrulayın</h1>
+                    <p class="sub"><b>@maskedEmail</b> adresine 6 haneli bir doğrulama kodu gönderdik. Kodu aşağıya girin.</p>
+                    <a asp-controller="Register" asp-action="SignUp" class="change"><i class="bi bi-pencil"></i> Farklı bir e-posta ile kayıt ol</a>
+
+                    <form id="verifyForm" method="post" asp-controller="ConfirmMail" asp-action="Index" novalidate autocomplete="off">
+                        <input type="hidden" asp-for="Email" id="emailField">
+                        <input type="hidden" name="ValidCode" id="codeField">
+
+                        <div class="otp @(errors.Any() ? "is-invalid" : "")" id="otp" role="group" aria-label="6 haneli doğrulama kodu">
+                            <input type="text" inputmode="numeric" autocomplete="one-time-code" aria-label="1. hane">
+                            <input type="text" inputmode="numeric" aria-label="2. hane">
+                            <input type="text" inputmode="numeric" aria-label="3. hane">
+                            <span class="sep" aria-hidden="true"></span>
+                            <input type="text" inputmode="numeric" aria-label="4. hane">
+                            <input type="text" inputmode="numeric" aria-label="5. hane">
+                            <input type="text" inputmode="numeric" aria-label="6. hane">
+                        </div>
+                        <p class="msg @(errors.Any() ? "err" : "")" id="msg" aria-live="polite">@(string.Join(" ", errors))</p>
+
+                        <button type="submit" class="btn-primary-x" id="verifyBtn" disabled>
+                            <i class="bi bi-shield-check"></i><span>Hesabımı Doğrula</span>
+                        </button>
+                    </form>
+
+                    <form id="resendForm" method="post" asp-controller="ConfirmMail" asp-action="ResendCode">
+                        <input type="hidden" name="email" value="@Model.Email">
+                        <div class="resend" id="resend">
+                            Kodu almadınız mı?
+                            <button type="submit" id="resendBtn">Tekrar gönder <span class="cd" id="resendCd"></span></button>
+                        </div>
+                    </form>
+
+                    <div class="tip">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <span>E-postayı göremiyorsanız <b>Spam</b> veya <b>Gereksiz</b> klasörünü kontrol edin. Kodu kimseyle paylaşmayın; Mailora ekibi sizden asla kod istemez.</span>
+                    </div>
+
+                    <div class="card-foot">
+                        <a asp-controller="Login" asp-action="SignIn"><i class="bi bi-arrow-left"></i> Giriş sayfasına dön</a>
+                    </div>
+                </div>
+            }
+        </section>
+
+        <div class="page-foot">© 2026 Mailora · <i class="bi bi-lock-fill"></i> Bağlantınız SSL ile korunur</div>
+    </main>
+
+    <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+    @await Component.InvokeAsync("_ConfirmMailScriptComponentPartial")
+</body>
+</html>

@@ -1,0 +1,349 @@
+﻿@model UserEditViewModel
+@{
+    ViewData["Title"] = "Profilim";
+    ViewData["ActiveMenu"] = "profile";
+    Layout = "~/Views/MessageLayout/Index.cshtml";
+
+    var nameSurname = Model.Name + " " + Model.Surname;
+    var errors = ViewData.ModelState.Values.SelectMany(x => x.Errors).Select(x => x.ErrorMessage).ToList();
+    string? passwordError = TempData["PasswordError"] as string;
+    int sendboxCount = ViewBag.SendboxCount;
+    int inboxCount = ViewBag.InboxCount;
+    int unreadCount = ViewBag.UnreadCount;
+    int favoriteCount = ViewBag.FavoriteCount;
+    bool emailConfirmed = ViewBag.EmailConfirmed;
+    bool phoneNumberConfirmed = ViewBag.PhoneNumberConfirmed;
+    string userId = ViewBag.UserId;
+}
+
+<section class="profile" id="profile">
+
+    <div class="pf-head">
+        <h1>Profilim</h1>
+        <p>Kişisel bilgilerinizi, profil fotoğrafınızı ve şifrenizi yönetin.</p>
+    </div>
+
+    <div class="pf-hero">
+        <div class="pf-cover"><span class="pf-cover-chip"><i class="bi bi-envelope-paper-heart"></i> Mailora Hesabı</span></div>
+        <div class="pf-main">
+            <div class="pf-avatar-wrap">
+                <span class="avatar pf-avatar av-user" id="pfAvatar">
+                    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                    {
+                        <img src="@Model.ImageUrl" alt="@nameSurname">
+                    }
+                    else
+                    {
+                        @MessageHelper.Initials(nameSurname)
+                    }
+                </span>
+                <button type="button" class="pf-cam" data-photo="change" title="Profil fotoğrafını değiştir" aria-label="Profil fotoğrafını değiştir"><i class="bi bi-camera-fill"></i></button>
+            </div>
+            <div class="pf-id">
+                <div class="pf-name-row">
+                    <h2>@nameSurname</h2>
+                    <span class="pf-status">Aktif Hesap</span>
+                </div>
+                <div class="pf-username">@("@" + Model.UserName)</div>
+                <div class="pf-meta">
+                    <span><i class="bi bi-envelope"></i><span>@Model.Email</span></span>
+                    @if (!string.IsNullOrEmpty(Model.PhoneNumber))
+                    {
+                        <span><i class="bi bi-telephone"></i>@Model.PhoneNumber</span>
+                    }
+                </div>
+            </div>
+            <div class="pf-hero-actions">
+                <button type="button" class="btn-soft" data-photo="change"><i class="bi bi-camera"></i> Fotoğrafı Değiştir</button>
+                @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                {
+                    <form method="post" asp-action="RemoveImage" style="display:contents">
+                        <button type="submit" class="btn-soft danger" data-confirm="Profil fotoğrafınız kaldırılsın mı?"><i class="bi bi-trash3"></i> Kaldır</button>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="pf-stats">
+        <a class="pf-stat" asp-controller="Message" asp-action="Sendbox" style="color:inherit">
+            <span class="ic av-lav"><i class="bi bi-send-check"></i></span>
+            <span>
+                <span class="num d-block">@sendboxCount</span>
+                <span class="lbl d-block">Toplam Gönderilen Mesaj</span>
+                <span class="sub d-block">Gönderilenler kutunuz</span>
+            </span>
+        </a>
+        <a class="pf-stat" asp-controller="Message" asp-action="Inbox" style="color:inherit">
+            <span class="ic av-blue"><i class="bi bi-inbox"></i></span>
+            <span>
+                <span class="num d-block">@inboxCount</span>
+                <span class="lbl d-block">Toplam Alınan Mesaj</span>
+                <span class="sub d-block">Gelen kutunuz</span>
+            </span>
+        </a>
+        <a class="pf-stat" asp-controller="Message" asp-action="Inbox" asp-route-filter="unread" style="color:inherit">
+            <span class="ic av-peach"><i class="bi bi-envelope-exclamation"></i></span>
+            <span>
+                <span class="num d-block">@unreadCount</span>
+                <span class="lbl d-block">Okunmamış Mesaj</span>
+                <span class="sub d-block">Gelen kutunuzda bekliyor</span>
+            </span>
+        </a>
+        <a class="pf-stat" asp-controller="Message" asp-action="Favorites" style="color:inherit">
+            <span class="ic av-sun"><i class="bi bi-star"></i></span>
+            <span>
+                <span class="num d-block">@favoriteCount</span>
+                <span class="lbl d-block">Yıldızlı Mesaj</span>
+                <span class="sub d-block">Önemli olarak işaretlendi</span>
+            </span>
+        </a>
+    </div>
+
+    <div class="pf-grid">
+        <div class="pf-col">
+
+            <form class="pf-card" id="pfInfoForm" method="post" asp-action="Index" enctype="multipart/form-data" autocomplete="on">
+                <input type="file" id="pfPhotoInput" name="Image" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+                <div class="pf-card-head">
+                    <div class="ic av-lav"><i class="bi bi-person-vcard"></i></div>
+                    <div><h3>Kişisel Bilgiler</h3><p>Hesabınızda görünen temel bilgiler</p></div>
+                </div>
+                <div class="pf-card-body">
+                    @if (errors.Any())
+                    {
+                        <div class="pf-alert" role="alert">
+                            <i class="bi bi-exclamation-octagon-fill"></i>
+                            <div>
+                                @foreach (var item in errors)
+                                {
+                                    <div>@item</div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    <div class="pf-form-grid">
+                        <div class="pf-field" data-field="name">
+                            <label for="pf-name">Ad <span class="req">*</span></label>
+                            <div class="pf-input-wrap">
+                                <i class="bi bi-person lead"></i>
+                                <input id="pf-name" asp-for="Name" class="pf-input" type="text" autocomplete="given-name" maxlength="50" required>
+                            </div>
+                            <div class="pf-error"></div>
+                        </div>
+                        <div class="pf-field" data-field="surname">
+                            <label for="pf-surname">Soyad <span class="req">*</span></label>
+                            <div class="pf-input-wrap">
+                                <i class="bi bi-person lead"></i>
+                                <input id="pf-surname" asp-for="Surname" class="pf-input" type="text" autocomplete="family-name" maxlength="50" required>
+                            </div>
+                            <div class="pf-error"></div>
+                        </div>
+                        <div class="pf-field" data-field="userName">
+                            <label for="pf-userName">Kullanıcı Adı</label>
+                            <div class="pf-input-wrap">
+                                <i class="bi bi-at lead"></i>
+                                <input id="pf-userName" class="pf-input" type="text" value="@Model.UserName" readonly disabled>
+                            </div>
+                            <div class="pf-hint"><span>Kullanıcı adı değiştirilemez.</span></div>
+                        </div>
+                        <div class="pf-field" data-field="email">
+                            <label for="pf-email">E-posta Adresi</label>
+                            <div class="pf-input-wrap">
+                                <i class="bi bi-envelope lead"></i>
+                                <input id="pf-email" class="pf-input" type="email" value="@Model.Email" readonly disabled>
+                            </div>
+                            <div class="pf-hint"><span>Mesajlarınız bu adrese bağlı olduğu için değiştirilemez.</span></div>
+                        </div>
+                        <div class="pf-field span-2" data-field="phone">
+                            <label for="pf-phone">Telefon Numarası</label>
+                            <div class="pf-input-wrap">
+                                <i class="bi bi-telephone lead"></i>
+                                <input id="pf-phone" asp-for="PhoneNumber" class="pf-input" type="tel" autocomplete="tel" placeholder="+90 5xx xxx xx xx" maxlength="20">
+                            </div>
+                            <div class="pf-error"></div>
+                        </div>
+                        <div class="pf-field span-2" data-field="about">
+                            <label for="pf-about">Hakkımda</label>
+                            <textarea id="pf-about" asp-for="Description" class="pf-input" rows="4" maxlength="300" placeholder="Kendinizden kısaca bahsedin…"></textarea>
+                            <div class="pf-hint"><span>Profil kartınızda görünür.</span><span id="pfAboutCount">0 / 300</span></div>
+                            <div class="pf-error"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="pf-card-foot">
+                    <span class="pf-dirty" id="pfDirty">Tüm değişiklikler kaydedildi</span>
+                    <button type="submit" class="btn-send" id="pfSave"><span class="lbl"><i class="bi bi-check2-circle"></i> Değişiklikleri Kaydet</span></button>
+                </div>
+            </form>
+        </div>
+
+        <div class="pf-col">
+
+            <form class="pf-card" id="pfPassForm" method="post" asp-action="ChangePassword" novalidate>
+                <input type="text" name="username" autocomplete="username" value="@Model.UserName" hidden>
+                <div class="pf-card-head">
+                    <div class="ic av-rose"><i class="bi bi-shield-lock"></i></div>
+                    <div><h3>Hesap Güvenliği</h3><p>Şifrenizi düzenli olarak değiştirin</p></div>
+                </div>
+                <div class="pf-card-body">
+                    @if (!string.IsNullOrEmpty(passwordError))
+                    {
+                        <div class="pf-alert" role="alert">
+                            <i class="bi bi-exclamation-octagon-fill"></i>
+                            <div>@passwordError</div>
+                        </div>
+                    }
+                    <div class="pf-stack">
+                        <div class="pf-field" data-field="currentPassword">
+                            <label for="pf-currentPassword">Mevcut Şifre <span class="req">*</span></label>
+                            <div class="pf-input-wrap">
+                                <i class="bi bi-lock lead"></i>
+                                <input id="pf-currentPassword" name="CurrentPassword" class="pf-input has-eye" type="password" autocomplete="current-password" spellcheck="false">
+                                <button type="button" class="tool-btn pf-eye" data-eye="pf-currentPassword" aria-label="Şifreyi göster" title="Şifreyi göster"><i class="bi bi-eye"></i></button>
+                            </div>
+                            <div class="pf-error"></div>
+                        </div>
+                        <div class="pf-field" data-field="newPassword">
+                            <label for="pf-newPassword">Yeni Şifre <span class="req">*</span></label>
+                            <div class="pf-input-wrap">
+                                <i class="bi bi-lock lead"></i>
+                                <input id="pf-newPassword" name="NewPassword" class="pf-input has-eye" type="password" autocomplete="new-password" spellcheck="false">
+                                <button type="button" class="tool-btn pf-eye" data-eye="pf-newPassword" aria-label="Şifreyi göster" title="Şifreyi göster"><i class="bi bi-eye"></i></button>
+                            </div>
+                            <div class="pf-strength" id="pfStrength" data-level="0"><span></span><span></span><span></span><span></span></div>
+                            <div class="pf-strength-label"><span>Şifre gücü</span><b id="pfStrengthText">-</b></div>
+                            <div class="pf-error"></div>
+                        </div>
+                        <div class="pf-field" data-field="newPasswordConfirm">
+                            <label for="pf-newPasswordConfirm">Yeni Şifre Tekrar <span class="req">*</span></label>
+                            <div class="pf-input-wrap">
+                                <i class="bi bi-lock lead"></i>
+                                <input id="pf-newPasswordConfirm" name="NewPasswordConfirm" class="pf-input has-eye" type="password" autocomplete="new-password" spellcheck="false">
+                                <button type="button" class="tool-btn pf-eye" data-eye="pf-newPasswordConfirm" aria-label="Şifreyi göster" title="Şifreyi göster"><i class="bi bi-eye"></i></button>
+                            </div>
+                            <div class="pf-error"></div>
+                        </div>
+                    </div>
+                    <ul class="pf-rules" id="pfRules"></ul>
+                    <div class="pf-note"><i class="bi bi-info-circle-fill"></i><span>Mevcut şifre doğrulaması ve güncelleme işlemi sunucu tarafında ASP.NET Core Identity ile yapılır.</span></div>
+                </div>
+                <div class="pf-card-foot">
+                    <a class="link-btn" asp-controller="PasswordChange" asp-action="ForgetPassword" style="margin-right:auto">Şifremi unuttum</a>
+                    <button type="submit" class="btn-send" id="pfPassSave"><span class="lbl"><i class="bi bi-shield-check"></i> Şifremi Güncelle</span></button>
+                </div>
+            </form>
+
+            <div class="pf-card">
+                <div class="pf-card-head">
+                    <div class="ic av-blue"><i class="bi bi-person-check"></i></div>
+                    <div><h3>Hesap Durumu</h3><p>Doğrulama ve güvenlik özeti</p></div>
+                </div>
+                <div class="pf-card-body">
+                    <ul class="pf-list">
+                        <li><span class="k"><i class="bi bi-fingerprint"></i> Kullanıcı ID</span><span class="v" title="@userId">@(userId.Length > 13 ? userId.Substring(0, 13) + "…" : userId)</span></li>
+                        <li><span class="k"><i class="bi bi-envelope-check"></i> E-posta doğrulama</span><span class="v">@if (emailConfirmed) {<span class="pf-badge ok"><i class="bi bi-check2"></i> Doğrulandı</span>} else {<span class="pf-badge warn">Bekliyor</span>}</span></li>
+                        <li><span class="k"><i class="bi bi-phone"></i> Telefon doğrulama</span><span class="v">@if (phoneNumberConfirmed) {<span class="pf-badge ok">Doğrulandı</span>} else {<span class="pf-badge warn">Doğrulanmadı</span>}</span></li>
+                        <li><span class="k"><i class="bi bi-at"></i> Kullanıcı adı</span><span class="v">@Model.UserName</span></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</section>
+
+@section Scripts {
+    <script>
+        (() => {
+            const { $, $$, showToast, escapeHtml } = window.Mailora;
+
+            const PW_RULES = [
+                { id: 'len', text: 'En az 6 karakter', test: v => v.length >= 6 },
+                { id: 'upper', text: 'En az bir büyük harf', test: v => /[A-ZÇĞİÖŞÜ]/.test(v) },
+                { id: 'lower', text: 'En az bir küçük harf', test: v => /[a-zçğıöşü]/.test(v) },
+                { id: 'digit', text: 'En az bir rakam', test: v => /\d/.test(v) },
+                { id: 'special', text: 'En az bir özel karakter', test: v => /[^A-Za-z0-9ÇĞİÖŞÜçğıöşü\s]/.test(v) },
+                { id: 'match', text: 'Şifreler eşleşiyor', test: (v, c) => !!v && v === c }
+            ];
+            const PW_LEVELS = [
+                { t: '-', c: 'var(--muted)' }, { t: 'Zayıf', c: '#C2476B' }, { t: 'Orta', c: '#C8774A' },
+                { t: 'İyi', c: 'var(--accent-dark)' }, { t: 'Güçlü', c: '#3E9A77' }
+            ];
+
+            const infoForm = $('#pfInfoForm');
+            const photoInput = $('#pfPhotoInput');
+            const about = $('#pf-about');
+            const dirtyText = $('#pfDirty');
+
+            const markInfoDirty = () => { dirtyText.textContent = 'Kaydedilmemiş değişiklikler var'; dirtyText.classList.add('on'); };
+            $$('input, textarea', infoForm).forEach(el => el.addEventListener('input', markInfoDirty));
+
+            const updateAboutCount = () => { $('#pfAboutCount').textContent = `${about.value.length} / 300`; };
+            about.addEventListener('input', updateAboutCount);
+            updateAboutCount();
+
+            $$('[data-photo="change"]').forEach(b => b.addEventListener('click', () => photoInput.click()));
+            photoInput.addEventListener('change', () => {
+                const file = photoInput.files[0];
+                if (!file) return;
+                if (!/^image\/(png|jpe?g|webp|gif)$/.test(file.type)) { photoInput.value = ''; showToast('Yalnızca PNG, JPG, WEBP veya GIF yükleyebilirsiniz.', 'bi-exclamation-circle'); return; }
+                if (file.size > 2 * 1024 * 1024) { photoInput.value = ''; showToast('Profil fotoğrafı en fazla 2 MB olabilir.', 'bi-exclamation-circle'); return; }
+                const reader = new FileReader();
+                reader.onload = () => {
+                    $('#pfAvatar').innerHTML = `<img src="${escapeHtml(reader.result)}" alt="">`;
+                    markInfoDirty();
+                    showToast('Fotoğrafı kaydetmek için "Değişiklikleri Kaydet" butonuna tıklayın.', 'bi-camera');
+                };
+                reader.readAsDataURL(file);
+            });
+
+            infoForm.addEventListener('submit', e => {
+                const name = $('#pf-name').value.trim(), surname = $('#pf-surname').value.trim();
+                if (!name || !surname) {
+                    e.preventDefault();
+                    showToast('Ad ve soyad alanları boş bırakılamaz.', 'bi-exclamation-circle');
+                    return;
+                }
+                const btn = $('#pfSave');
+                setTimeout(() => { btn.disabled = true; btn.innerHTML = '<span class="lbl"><span class="spin"></span> Kaydediliyor…</span>'; });
+            });
+
+            $$('[data-eye]').forEach(btn => btn.addEventListener('click', () => {
+                const input = $('#' + btn.dataset.eye), show = input.type === 'password';
+                input.type = show ? 'text' : 'password';
+                $('i', btn).className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
+                btn.title = show ? 'Şifreyi gizle' : 'Şifreyi göster';
+            }));
+
+            $('#pfRules').innerHTML = PW_RULES.map(r => `<li data-rule="${r.id}"><i class="bi bi-circle"></i>${r.text}</li>`).join('');
+
+            function updatePasswordUi() {
+                const v = $('#pf-newPassword').value, c = $('#pf-newPasswordConfirm').value;
+                PW_RULES.forEach(r => {
+                    const li = $(`[data-rule="${r.id}"]`), ok = r.test(v, c);
+                    li.classList.toggle('ok', ok);
+                    $('i', li).className = ok ? 'bi bi-check-circle-fill' : 'bi bi-circle';
+                });
+                const passed = PW_RULES.slice(0, 5).filter(r => r.test(v)).length;
+                const level = !v ? 0 : passed <= 2 ? 1 : passed === 3 ? 2 : passed === 4 ? 3 : 4;
+                $('#pfStrength').dataset.level = level;
+                $('#pfStrengthText').textContent = PW_LEVELS[level].t;
+                $('#pfStrengthText').style.color = PW_LEVELS[level].c;
+            }
+            ['#pf-newPassword', '#pf-newPasswordConfirm'].forEach(s => $(s).addEventListener('input', updatePasswordUi));
+            updatePasswordUi();
+
+            $('#pfPassForm').addEventListener('submit', e => {
+                const current = $('#pf-currentPassword').value, v = $('#pf-newPassword').value, c = $('#pf-newPasswordConfirm').value;
+                let msg = '';
+                if (!current || !v || !c) msg = 'Lütfen tüm şifre alanlarını doldurun.';
+                else if (PW_RULES.slice(0, 5).some(r => !r.test(v))) msg = 'Yeni şifre tüm kuralları karşılamalıdır.';
+                else if (v !== c) msg = 'Yeni şifre ve şifre tekrarı eşleşmiyor.';
+                if (msg) { e.preventDefault(); showToast(msg, 'bi-exclamation-circle'); return; }
+                const btn = $('#pfPassSave');
+                setTimeout(() => { btn.disabled = true; btn.innerHTML = '<span class="lbl"><span class="spin"></span> Güncelleniyor…</span>'; });
+            });
+        })();
+    </script>
+}

@@ -1,26 +1,21 @@
-﻿@model MYAcademy_IdentityEmailProject.Entities.Message
-
-@using System.Security.Claims
+﻿@model CreateMessageViewModel
 @using Microsoft.AspNetCore.Mvc.Rendering
 @{
-    ViewData["Title"] = "Yeni Mesaj";
-    ViewData["ActiveMenu"] = "compose";        // Sidebar'daki data-page="compose" / data-menu="compose" linkini aktif yapar
+    string pageTitle = ViewBag.PageTitle ?? "Yeni Mesaj";
+    ViewData["Title"] = pageTitle;
+    ViewData["ActiveMenu"] = Model.MessageId != 0 ? "drafts" : "compose";
     Layout = "~/Views/MessageLayout/Index.cshtml";
 
-    // Controller'da: ViewBag.Categories = List<SelectListItem>
     var categories = ViewBag.Categories as IEnumerable<SelectListItem> ?? Enumerable.Empty<SelectListItem>();
+    string senderNameSurname = ViewBag.SenderNameSurname;
+    string senderEmail = ViewBag.SenderEmail;
 
-    var userName = User.FindFirstValue(ClaimTypes.GivenName) ?? User.Identity?.Name ?? "";
-    var userEmail = User.FindFirstValue(ClaimTypes.Email) ?? "";
-
-    // Sunucu tarafı (ModelState) hataları
     string ErrClass(string key) => ViewData.ModelState.TryGetValue(key, out var e) && e.Errors.Count > 0 ? "has-error" : "";
     string? ErrText(string key) => ViewData.ModelState.TryGetValue(key, out var e) ? e.Errors.FirstOrDefault()?.ErrorMessage : null;
-    var generalError = ErrText(string.Empty);   // ModelState.AddModelError("", "...") ile eklenen genel hata
+    var generalErrors = ViewData.ModelState.TryGetValue(string.Empty, out var ge) ? ge.Errors.Select(x => x.ErrorMessage).ToList() : new List<string>();
 }
 
 <style>
-    /* Kategori dropdown'u — compose satırlarıyla uyumlu sade görünüm */
     .cmp-select-wrap {
         position: relative;
         flex: 1;
@@ -78,27 +73,36 @@
 
     <div class="cmp-head">
         <div>
-            <h1>Yeni Mesaj</h1>
-            <p>Yeni bir e-posta oluşturun ve gönderin</p>
+            <h1>@pageTitle</h1>
+            <p>@(Model.MessageId != 0 ? "Taslağınızı düzenleyin, kaydedin veya gönderin" : "Yeni bir e-posta oluşturun ve gönderin")</p>
         </div>
         <div class="cmp-status" id="cmpStatus" data-state="empty" aria-live="polite">
             <span class="sdot"></span><span class="stext">Yeni mesaj</span>
         </div>
     </div>
 
-    @* Controller adınız farklıysa asp-controller ekleyin: asp-controller="Message" *@
-    <form class="cmp-card" id="cmpForm" asp-action="Create" method="post" novalidate autocomplete="off">
+    @if (generalErrors.Any())
+    {
+        <div class="cmp-alert" role="alert">
+            <i class="bi bi-exclamation-octagon-fill"></i>
+            <div>
+                @foreach (var item in generalErrors)
+                {
+                    <div>@item</div>
+                }
+            </div>
+        </div>
+    }
 
-        <!-- Alıcı, kategori & konu -->
+    <form class="cmp-card" id="cmpForm" asp-controller="Message" asp-action="CreateMessage" method="post" novalidate autocomplete="off">
+        <input type="hidden" asp-for="MessageId">
+
         <div class="cmp-fields">
             <div class="cmp-row">
                 <span class="cmp-label">Kimden</span>
                 <div class="cmp-from">
-                    <b>@userName</b>
-                    @if (!string.IsNullOrEmpty(userEmail))
-                    {
-                        <span>&lt;@userEmail&gt;</span>
-                    }
+                    <b>@senderNameSurname</b>
+                    <span>&lt;@senderEmail&gt;</span>
                 </div>
             </div>
 
@@ -129,7 +133,6 @@
             </div>
         </div>
 
-        <!-- Rich text araç çubuğu -->
         <div class="cmp-toolbar" id="cmpToolbar" role="toolbar" aria-label="Biçimlendirme">
             <div class="tb-wrap">
                 <button type="button" class="tb-btn tb-select" data-pop="block" title="Başlık biçimi"><span id="tbBlockLabel">Paragraf</span><i class="bi bi-chevron-down"></i></button>
@@ -184,26 +187,22 @@
             </div>
         </div>
 
-        <!-- Editör (HTML içerik gizli Content alanına yazılır) -->
         <div class="cmp-editor-wrap @ErrClass(nameof(Model.MessageDetail))" id="rowBody">
             <div class="cmp-editor" id="cmpEditor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Mesaj içeriği"
-                 data-placeholder="Merhaba, mesajınızı buraya yazmaya başlayın…">
-                @Html.Raw(Model?.MessageDetail)
-            </div>
+                 data-placeholder="Merhaba, mesajınızı buraya yazmaya başlayın…" data-html="@Model.MessageDetail"></div>
             <input type="hidden" asp-for="MessageDetail" id="cmpContent">
             <div class="cmp-counter" id="cmpCounter">0 kelime · 0 karakter</div>
             <div class="cmp-err">@ErrText(nameof(Model.MessageDetail))</div>
         </div>
 
-        <!-- Alt işlem çubuğu -->
         <div class="cmp-actions">
-            <button type="submit" class="btn-send" id="cmpSend"><span class="lbl"><i class="bi bi-send-fill"></i> Mesajı Gönder</span></button>
+            <button type="submit" class="btn-send" id="cmpSend" name="submitType" value="send"><span class="lbl"><i class="bi bi-send-fill"></i> Mesajı Gönder</span></button>
+            <button type="submit" class="btn-soft" id="cmpDraft" name="submitType" value="draft"><i class="bi bi-file-earmark-text"></i> Taslak Olarak Kaydet</button>
             <button type="button" class="btn-soft danger" id="cmpClear"><i class="bi bi-x-circle"></i> Temizle</button>
             <span class="cmp-hint"><span class="kbd-s">Ctrl</span> + <span class="kbd-s">Enter</span> ile gönder</span>
         </div>
     </form>
 
-    <!-- Temizleme onay penceresi -->
     <div class="cmp-dialog" id="cmpDialog" hidden>
         <div class="cd-card" role="alertdialog" aria-modal="true" aria-labelledby="cdTitle">
             <div class="cd-ic"><i class="bi bi-exclamation-triangle"></i></div>
@@ -220,35 +219,30 @@
 
 @section Scripts {
     <script>
-        /* ======================================================================
-           YENİ MESAJ — form normal POST ile gönderilir (asp-action="Create").
-           JS: zengin metin editörü, istemci doğrulaması, Ctrl+Enter, temizle onayı.
-           ====================================================================== */
         (() => {
-            const { $, $$, showToast } = window.Mailora;
+            const { $, $$, showToast, escapeHtml } = window.Mailora;
 
             const EMAIL_RE = /^[^\s@@<>()[\],;:"]+@@[^\s@@<>()[\],;:"]+\.[a-z]{2,}$/i;
             const STATE_CMDS = ['bold', 'italic', 'underline', 'strikeThrough', 'insertUnorderedList', 'insertOrderedList', 'justifyLeft', 'justifyCenter', 'justifyRight'];
             const BLOCK_LABELS = { p: 'Paragraf', div: 'Paragraf', h1: 'Başlık 1', h2: 'Başlık 2', h3: 'Başlık 3', blockquote: 'Alıntı' };
+            const IS_DRAFT = @(Model.MessageId != 0 ? "true" : "false");
 
             const form = $('#cmpForm'), editor = $('#cmpEditor'), content = $('#cmpContent');
             const to = $('#cmpTo'), category = $('#cmpCategory'), subject = $('#cmpSubject');
             let savedRange = null, dirty = false, sending = false;
 
             const textOf = html => { const d = document.createElement('div'); d.innerHTML = html || ''; return (d.textContent || '').trim(); };
-            const escapeHtml = window.Mailora.escapeHtml;
 
-            /* --- Durum göstergesi --- */
             function updateStatus() {
                 const el = $('#cmpStatus');
                 const empty = !to.value.trim() && !category.value && !subject.value.trim() && !textOf(editor.innerHTML);
                 const state = sending ? 'saving' : empty ? 'empty' : 'dirty';
                 el.dataset.state = state;
-                $('.stext', el).textContent = { empty: 'Yeni mesaj', dirty: 'Gönderilmedi', saving: 'Gönderiliyor…' }[state];
+                const texts = { empty: IS_DRAFT ? 'Taslak' : 'Yeni mesaj', dirty: IS_DRAFT ? 'Taslak düzenleniyor' : 'Gönderilmedi', saving: 'Kaydediliyor…' };
+                $('.stext', el).textContent = texts[state];
             }
             function markDirty() { dirty = true; updateStatus(); }
 
-            /* --- Hata gösterimi --- */
             function setFieldError(row, msg) {
                 row.classList.add('has-error');
                 $('.cmp-err', row).textContent = msg;
@@ -260,8 +254,7 @@
                 $('.cmp-err', row).textContent = '';
             }
 
-            /* --- Editör --- */
-            try { document.execCommand('defaultParagraphSeparator', false, 'p'); document.execCommand('styleWithCSS', false, true); } catch (e) { /* eski tarayıcı */ }
+            try { document.execCommand('defaultParagraphSeparator', false, 'p'); document.execCommand('styleWithCSS', false, true); } catch (e) { }
 
             function syncContent() {
                 if (['<br>', '<p><br></p>', '<div><br></div>'].includes(editor.innerHTML.trim())) editor.innerHTML = '';
@@ -269,13 +262,13 @@
             }
 
             function updateCounter() {
-                const text = editor.innerText.replace(/ /g, ' ').trim();
+                const text = editor.innerText.replace(/ /g, ' ').trim();
                 const words = text ? text.split(/\s+/).length : 0;
-                ('#cmpCounter').textContent=`{words.toLocaleString('tr-TR')} kelime · ${text.length.toLocaleString('tr-TR')} karakter`;
+                $('#cmpCounter').textContent = `${words.toLocaleString('tr-TR')} kelime · ${text.length.toLocaleString('tr-TR')} karakter`;
             }
 
             editor.addEventListener('input', () => { syncContent(); updateCounter(); clearFieldError($('#rowBody')); markDirty(); });
-            editor.addEventListener('paste', e => {      // dışarıdan gelen biçimleri temizle
+            editor.addEventListener('paste', e => {
                 const text = (e.clipboardData || window.clipboardData).getData('text/plain');
                 e.preventDefault();
                 document.execCommand('insertText', false, text);
@@ -308,7 +301,7 @@
                 editor.focus(); restoreSelection();
                 const sel = window.getSelection();
                 if (!sel.rangeCount || sel.isCollapsed || !editor.contains(sel.anchorNode)) {
-                    document.execCommand('insertHTML', false, `<a href="escapeHtml(url)">{escapeHtml(raw)}</a>&nbsp;`);
+                    document.execCommand('insertHTML', false, `<a href="${escapeHtml(url)}">${escapeHtml(raw)}</a>&nbsp;`);
                 } else {
                     document.execCommand('createLink', false, url);
                 }
@@ -324,7 +317,7 @@
                 STATE_CMDS.forEach(c => {
                     let on = false;
                     if (inEditor) { try { on = document.queryCommandState(c); } catch (e) { on = false; } }
-                    (`[data-cmd="{c}"]`, tb)?.classList.toggle('active', on);
+                    $(`[data-cmd="${c}"]`, tb)?.classList.toggle('active', on);
                 });
                 let block = '';
                 if (inEditor) { try { block = String(document.queryCommandValue('formatBlock') || '').toLowerCase().replace(/[<>]/g, ''); } catch (e) { block = ''; } }
@@ -332,13 +325,13 @@
             }
 
             function togglePop(name, btn) {
-                const pop = (`[data-pop-for="{name}"]`);
+                const pop = $(`[data-pop-for="${name}"]`);
                 const willOpen = !pop.classList.contains('show');
                 closePops();
                 if (!willOpen) return;
                 pop.classList.add('show');
                 btn.classList.add('open');
-                pop.style.left = '0px';                                   // ekran dışına taşmayı engelle
+                pop.style.left = '0px';
                 const over = pop.getBoundingClientRect().right - (window.innerWidth - 12);
                 if (over > 0) pop.style.left = `${-over}px`;
                 if (name === 'link') setTimeout(() => $('#tbLinkInput').focus(), 30);
@@ -365,7 +358,6 @@
             document.addEventListener('selectionchange', () => { saveSelection(); updateToolbarState(); });
             document.addEventListener('mousedown', e => { if (!e.target.closest('.tb-wrap')) closePops(); });
 
-            /* --- Alıcı / Kategori / Konu --- */
             to.addEventListener('input', () => { clearFieldError($('#rowTo')); markDirty(); });
             to.addEventListener('blur', () => {
                 const v = to.value.trim();
@@ -380,7 +372,6 @@
             subject.addEventListener('input', () => { clearFieldError($('#rowSubject')); markDirty(); });
             subject.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) { e.preventDefault(); editor.focus(); } });
 
-            /* --- Doğrulama & gönderim --- */
             function validate() {
                 let first = null;
                 const fail = (row, msg, el) => { setFieldError(row, msg); if (!first) first = el; };
@@ -401,17 +392,20 @@
                 to.value = to.value.trim();
                 syncContent();
                 if (sending) { e.preventDefault(); return; }
-                if (!validate()) { e.preventDefault(); showToast('Lütfen işaretli alanları kontrol edin.', 'bi-exclamation-circle'); return; }
+
+                const isDraft = e.submitter && e.submitter.value === 'draft';
+                if (!isDraft && !validate()) { e.preventDefault(); showToast('Lütfen işaretli alanları kontrol edin.', 'bi-exclamation-circle'); return; }
 
                 sending = true; dirty = false;
-                const btn = $('#cmpSend');
-                btn.disabled = true;
-                $('.lbl', btn).innerHTML = '<span class="spin"></span> Gönderiliyor…';
+                const btn = isDraft ? $('#cmpDraft') : $('#cmpSend');
+                setTimeout(() => {
+                    $('#cmpSend').disabled = true;
+                    $('#cmpDraft').disabled = true;
+                    btn.innerHTML = `<span class="lbl"><span class="spin"></span> ${isDraft ? 'Kaydediliyor…' : 'Gönderiliyor…'}</span>`;
+                });
                 updateStatus();
-                // Form normal şekilde POST edilir → Controller'daki Create(CreateMessageViewModel model)
             });
 
-            /* --- Temizle (onaylı) --- */
             const dialog = $('#cmpDialog');
             const openClear = () => {
                 const empty = !to.value.trim() && !category.value && !subject.value.trim() && !textOf(editor.innerHTML);
@@ -435,33 +429,23 @@
                 } else if (act === 'cancel' || e.target === dialog) closeClear();
             });
 
-            /* --- Kısayollar --- */
             $('#compose').addEventListener('keydown', e => {
                 const mod = e.ctrlKey || e.metaKey;
-                if (mod && e.key === 'Enter') { e.preventDefault(); form.requestSubmit(); }
+                if (mod && e.key === 'Enter') { e.preventDefault(); form.requestSubmit($('#cmpSend')); }
                 if (e.key === 'Escape') { closePops(); closeClear(); }
             });
 
-            // Kaydedilmemiş içerikle sayfadan çıkarken uyar
             window.addEventListener('beforeunload', e => { if (dirty && !sending) { e.preventDefault(); e.returnValue = ''; } });
 
-            /* --- Başlangıç --- */
             syncContent();
             syncCategory();
             updateCounter();
             updateStatus();
             dirty = false;
 
-            const generalError = @Json.Serialize(generalError);
-            if (generalError) showToast(escapeHtml(generalError), 'bi-exclamation-circle');
-
-            // İlk hatalı alana ya da boş alana odaklan
             const firstErr = $('#compose .has-error input, #compose .has-error select, #compose .has-error .cmp-editor');
             if (firstErr) firstErr.focus();
             else if (window.innerWidth >= 768) (!to.value ? to : !category.value ? category : !subject.value ? subject : editor).focus();
         })();
     </script>
 }
-
-
-

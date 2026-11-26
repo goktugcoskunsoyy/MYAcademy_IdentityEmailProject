@@ -1,0 +1,102 @@
+﻿@model List<Message>
+@{
+    ViewData["Title"] = "Çöp Kutusu";
+    ViewData["ActiveMenu"] = "trash";
+    Layout = "~/Views/MessageLayout/Index.cshtml";
+
+    var users = ViewBag.Users as List<AppUser> ?? new List<AppUser>();
+    string email = ViewBag.Email;
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
+}
+
+<section class="inbox" id="trash">
+
+    <div class="panel list-panel">
+
+        <div class="list-head">
+            <div class="list-title">
+                <div>
+                    <h1>Çöp Kutusu</h1>
+                    <div class="sub">Silinen mesajları geri yükleyebilir veya kalıcı olarak silebilirsiniz</div>
+                </div>
+                <span class="count-pill"><i class="bi bi-trash3"></i> @Model.Count mesaj</span>
+            </div>
+        </div>
+
+        <form id="bulkForm" method="post">
+            <input type="hidden" name="returnUrl" value="@returnUrl">
+        </form>
+
+        <div class="bulk-bar">
+            <input type="checkbox" class="m-check" id="checkAll" aria-label="Tümünü seç">
+            <span class="sel-info" id="selInfo">Tümünü seç</span>
+            <span class="spacer"></span>
+            <button type="submit" form="bulkForm" formaction="@Url.Action("RestoreMessage", "Message")" class="tool-btn" data-bulk title="Geri yükle" disabled><i class="bi bi-arrow-counterclockwise"></i></button>
+            <button type="submit" form="bulkForm" formaction="@Url.Action("DeleteMessage", "Message")" class="tool-btn" data-bulk data-confirm="Seçili mesajlar kalıcı olarak silinecek. Bu işlem geri alınamaz. Devam edilsin mi?" title="Kalıcı olarak sil" disabled><i class="bi bi-x-octagon"></i></button>
+            <a href="@returnUrl" class="tool-btn" title="Yenile"><i class="bi bi-arrow-clockwise"></i></a>
+        </div>
+
+        <div class="msg-list" id="msgList">
+            @foreach (var item in Model)
+            {
+                var isSent = item.SenderEmail == email;
+                var otherEmail = isSent ? item.ReceiverEmail : item.SenderEmail;
+                var otherUser = users.FirstOrDefault(x => x.Email == otherEmail);
+                var otherName = otherUser != null ? otherUser.Name + " " + otherUser.Surname : (string.IsNullOrEmpty(otherEmail) ? "(Alıcı yok)" : otherEmail);
+
+                <article class="msg-item" data-href="@Url.Action("MessageDetail", "Message", new { id = item.MessageId })" tabindex="0" title="Mesajı aç">
+                    <div class="lead">
+                        <input type="checkbox" class="m-check row-check" name="ids" value="@item.MessageId" form="bulkForm" aria-label="Seç">
+                    </div>
+                    <span class="avatar @MessageHelper.AvatarColor(otherEmail)">
+                        @if (otherUser != null && !string.IsNullOrEmpty(otherUser.ImageUrl))
+                        {
+                            <img src="@otherUser.ImageUrl" alt="@otherName">
+                        }
+                        else
+                        {
+                            @MessageHelper.Initials(otherName)
+                        }
+                    </span>
+                    <div class="mi-sender">
+                        <span class="sender" title="@otherEmail"><span class="who-label">@(isSent ? "Kime:" : "Kimden:")</span>@otherName</span>
+                    </div>
+                    <div class="mi-main">
+                        <span class="subject">@(string.IsNullOrEmpty(item.Subject) ? "(Konu yok)" : item.Subject)</span>
+                        <span class="snippet">@MessageHelper.Snippet(item.MessageDetail)</span>
+                    </div>
+                    <div class="mi-meta">
+                        @if (item.IsDraft)
+                        {
+                            <span class="tag tag-fatura">Taslak</span>
+                        }
+                        else if (isSent)
+                        {
+                            <span class="tag tag-sistem">Gönderilen</span>
+                        }
+                        else
+                        {
+                            <span class="tag tag-is">Gelen</span>
+                        }
+                    </div>
+                    <span class="time" title="@MessageHelper.LongTime(item.SendDate)">@MessageHelper.ShortTime(item.SendDate)</span>
+                </article>
+            }
+
+            @if (!Model.Any())
+            {
+                <div class="empty-list">
+                    <div class="ic"><i class="bi bi-trash3"></i></div>
+                    <h6>Çöp kutunuz boş</h6>
+                    <div>Sildiğiniz mesajlar burada listelenir.</div>
+                </div>
+            }
+        </div>
+
+        <div class="list-foot">
+            <span class="range" id="rangeInfo"></span>
+            <div class="pager" id="pager"></div>
+        </div>
+    </div>
+
+</section>

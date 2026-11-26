@@ -1,0 +1,144 @@
+﻿@model List<Message>
+@{
+    ViewData["Title"] = "Gönderilenler";
+    ViewData["ActiveMenu"] = "sent";
+    Layout = "~/Views/MessageLayout/Index.cshtml";
+
+    var users = ViewBag.Users as List<AppUser> ?? new List<AppUser>();
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
+    string? search = ViewBag.Search;
+    int? categoryId = ViewBag.CategoryId;
+    string sort = ViewBag.Sort;
+    bool hasFilter = !string.IsNullOrEmpty(search) || categoryId != null;
+}
+
+<section class="inbox" id="sendbox">
+
+    <div class="panel list-panel">
+
+        <div class="list-head">
+            <div class="list-title">
+                <div>
+                    <h1>Gönderilenler</h1>
+                    <div class="sub">@ViewBag.AllCount mesaj · @ViewBag.Email</div>
+                </div>
+                <a class="count-pill" asp-action="CreateMessage"><i class="bi bi-pencil-square"></i> Yeni Mesaj</a>
+            </div>
+
+            <form class="list-tools" method="get" asp-action="Sendbox">
+                <div class="list-search @(string.IsNullOrEmpty(search) ? "" : "has-value")">
+                    <i class="bi bi-search"></i>
+                    <input type="text" name="search" value="@search" placeholder="Alıcı, konu veya içerik ara" autocomplete="off">
+                    @if (!string.IsNullOrEmpty(search))
+                    {
+                        <a class="clear" asp-action="Sendbox" asp-route-categoryId="@categoryId" asp-route-sort="@sort" aria-label="Temizle"><i class="bi bi-x-circle-fill"></i></a>
+                    }
+                </div>
+                <div class="list-select">
+                    <select name="categoryId" asp-items="ViewBag.Categories" onchange="this.form.submit()" aria-label="Kategori">
+                        <option value="">Tüm kategoriler</option>
+                    </select>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+                <div class="list-select">
+                    <select name="sort" onchange="this.form.submit()" aria-label="Sıralama">
+                        <option value="newest" selected="@(sort == "newest")">En yeni önce</option>
+                        <option value="oldest" selected="@(sort == "oldest")">En eski önce</option>
+                    </select>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+            </form>
+
+            @if (hasFilter)
+            {
+                <div class="filter-chips">
+                    <a class="chip" asp-action="Sendbox"><i class="bi bi-x"></i> Filtreleri temizle</a>
+                </div>
+            }
+        </div>
+
+        <form id="bulkForm" method="post">
+            <input type="hidden" name="returnUrl" value="@returnUrl">
+        </form>
+
+        <div class="bulk-bar">
+            <input type="checkbox" class="m-check" id="checkAll" aria-label="Tümünü seç">
+            <span class="sel-info" id="selInfo">Tümünü seç</span>
+            <span class="spacer"></span>
+            <button type="submit" form="bulkForm" formaction="@Url.Action("MoveToTrash", "Message")" class="tool-btn" data-bulk title="Çöp kutusuna taşı" disabled><i class="bi bi-trash3"></i></button>
+            <a href="@returnUrl" class="tool-btn" title="Yenile"><i class="bi bi-arrow-clockwise"></i></a>
+        </div>
+
+        <div class="msg-list" id="msgList">
+            @foreach (var item in Model)
+            {
+                var receiver = users.FirstOrDefault(x => x.Email == item.ReceiverEmail);
+                var receiverName = receiver != null ? receiver.Name + " " + receiver.Surname : item.ReceiverEmail;
+
+                <article class="msg-item" data-href="@Url.Action("MessageDetail", "Message", new { id = item.MessageId })" tabindex="0" title="Mesajı aç">
+                    <div class="lead">
+                        <input type="checkbox" class="m-check row-check" name="ids" value="@item.MessageId" form="bulkForm" aria-label="Seç">
+                    </div>
+                    <span class="avatar @MessageHelper.AvatarColor(item.ReceiverEmail)">
+                        @if (receiver != null && !string.IsNullOrEmpty(receiver.ImageUrl))
+                        {
+                            <img src="@receiver.ImageUrl" alt="@receiverName">
+                        }
+                        else
+                        {
+                            @MessageHelper.Initials(receiverName)
+                        }
+                    </span>
+                    <div class="mi-sender">
+                        <span class="sender" title="@item.ReceiverEmail"><span class="who-label">Kime:</span>@receiverName</span>
+                    </div>
+                    <div class="mi-main">
+                        <span class="subject">@item.Subject</span>
+                        <span class="snippet">@MessageHelper.Snippet(item.MessageDetail)</span>
+                    </div>
+                    <div class="mi-meta">
+                        @if (item.Category != null)
+                        {
+                            <span class="tag" style="@MessageHelper.CategoryStyle(item.CategoryId)">@item.Category.CategoryName</span>
+                        }
+                        @if (receiver == null)
+                        {
+                            <span class="tag tag-sistem" title="Uygulama dışındaki adrese SMTP ile gönderildi"><i class="bi bi-globe2"></i> E-posta</span>
+                        }
+                        else if (item.IsRead)
+                        {
+                            <span class="tag tag-kisisel" title="Alıcı mesajı okudu"><i class="bi bi-check2-all"></i> Okundu</span>
+                        }
+                    </div>
+                    <span class="time" title="@MessageHelper.LongTime(item.SendDate)">@MessageHelper.ShortTime(item.SendDate)</span>
+                </article>
+            }
+
+            @if (!Model.Any())
+            {
+                if (hasFilter)
+                {
+                    <div class="empty-list">
+                        <div class="ic"><i class="bi bi-search-heart"></i></div>
+                        <h6>Sonuç bulunamadı</h6>
+                        <div>Arama veya filtre kriterlerini değiştirmeyi deneyin.</div>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-list">
+                        <div class="ic"><i class="bi bi-send"></i></div>
+                        <h6>Henüz mesaj göndermediniz</h6>
+                        <div>Gönderdiğiniz mesajlar burada listelenecek.</div>
+                    </div>
+                }
+            }
+        </div>
+
+        <div class="list-foot">
+            <span class="range" id="rangeInfo"></span>
+            <div class="pager" id="pager"></div>
+        </div>
+    </div>
+
+</section>

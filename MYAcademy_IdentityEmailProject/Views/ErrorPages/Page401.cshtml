@@ -1,1 +1,43 @@
-﻿
+﻿@{
+    Layout = null;
+    string? returnUrl = ViewBag.ReturnUrl;
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+
+@await Component.InvokeAsync("_ErrorPagesStyleComponentPartial")
+
+<body>
+
+    <div class="auth-bg" aria-hidden="true"><span class="g1"></span><span class="g2"></span><span class="g3"></span></div>
+
+    <main class="page">
+        <a class="brand" asp-controller="Login" asp-action="SignIn" aria-label="Mailora giriş sayfası">
+            <span class="brand-logo"><i class="bi bi-envelope-paper-heart-fill"></i></span>
+            <span class="brand-name">Mail<span>ora</span></span>
+        </a>
+
+        <section class="card-x">
+            <div class="err-ic"><i class="bi bi-person-lock"></i></div>
+            <div class="err-code">401</div>
+            <h1>Oturum açmanız gerekiyor</h1>
+            <p class="sub">Bu sayfayı görüntüleyebilmek için Mailora hesabınızla giriş yapmalısınız. Oturumunuzun süresi dolmuş olabilir.</p>
+
+            <div class="err-actions">
+                <a class="btn-primary-x" asp-controller="Login" asp-action="SignIn" asp-route-returnUrl="@returnUrl"><i class="bi bi-box-arrow-in-right"></i> Giriş Yap</a>
+                <a class="btn-ghost" asp-controller="Register" asp-action="SignUp"><i class="bi bi-person-plus"></i> Hesap Oluştur</a>
+            </div>
+
+            <div class="tip">
+                <i class="bi bi-info-circle-fill"></i>
+                <span>Giriş yaptıktan sonra açmak istediğiniz sayfaya otomatik olarak yönlendirileceksiniz.</span>
+            </div>
+        </section>
+
+        <div class="page-foot">© 2026 Mailora · Hata Kodu 401 · Yetkisiz Erişim</div>
+    </main>
+
+    <script>document.title = '401 · Oturum Gerekli · Mailora';</script>
+</body>
+</html>

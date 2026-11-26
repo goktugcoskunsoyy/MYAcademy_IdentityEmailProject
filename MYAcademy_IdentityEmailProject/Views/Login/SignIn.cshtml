@@ -2,6 +2,8 @@
 
 @{
     Layout = null;
+    var errors = ViewData.ModelState.Values.SelectMany(x => x.Errors).Select(x => x.ErrorMessage).ToList();
+    string? success = TempData["Success"] as string;
 }
 
 <!DOCTYPE html>
@@ -13,29 +15,32 @@
 
   <div class="auth-bg" aria-hidden="true"><span class="g1"></span><span class="g2"></span><span class="g3"></span></div>
 
-  <!-- =====================================================================
-       LOGIN PAGE
-       ASP.NET Core MVC: Views/Account/Login.cshtml (Layout = "_AuthLayout")
-       Form → asp-controller="Account" asp-action="Login" method="post"
-       Model → LoginViewModel (UserNameOrEmail, Password, RememberMe)
-       ===================================================================== -->
   <main class="auth-page">
   <div class="auth-card">
             @await Component.InvokeAsync("_LoginBrandComponentPartial")
 
-      <!-- Sağ: giriş formu -->
       <section class="auth-form-wrap" id="formWrap">
         <div id="loginView">
           <div class="form-head">
             <h1>Giriş Yap</h1>
             <p>Tekrar hoş geldiniz! Mailora hesabınıza giriş yapın.</p>
-            <!-- ASP.NET: asp-controller="Account" asp-action="Register" -->
-            <div class="switch-link">Hesabınız yok mu? <a href="Register.html">Kayıt Ol</a></div>
+            <div class="switch-link">Hesabınız yok mu? <a asp-controller="Register" asp-action="SignUp">Kayıt Ol</a></div>
           </div>
 
-          <form method="post">
-            <!-- ASP.NET: @Html.AntiForgeryToken() / asp-validation-summary="ModelOnly" → #formAlert -->
-            <div class="form-alert" id="formAlert" role="alert"></div>
+          <form method="post" id="loginForm" asp-controller="Login" asp-action="SignIn" novalidate>
+            <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl">
+            @if (errors.Any())
+            {
+              <div class="form-alert" id="formAlert" role="alert"><i class="bi bi-exclamation-octagon-fill"></i><span><b>Giriş başarısız</b>@(string.Join(" ", errors))</span></div>
+            }
+            else if (!string.IsNullOrEmpty(success))
+            {
+              <div class="form-alert success" id="formAlert" role="alert"><i class="bi bi-check-circle-fill"></i><span><b>İşlem başarılı</b>@success</span></div>
+            }
+            else
+            {
+              <div class="form-alert" id="formAlert" role="alert"></div>
+            }
 
             <div class="form-grid">
 
@@ -63,7 +68,7 @@
 
               <div class="form-row">
                 <label class="remember" for="rememberMe">
-                  <input type="checkbox" class="m-check" id="rememberMe" name="RememberMe"> Beni hatırla
+                  <input type="checkbox" class="m-check" id="rememberMe" asp-for="RememberMe"> Beni hatırla
                 </label>
                 <button type="button" class="link-btn" data-open-reset>Şifremi unuttum?</button>
               </div>
@@ -74,7 +79,7 @@
             </button>
 
             <div class="secure-note"><i class="bi bi-shield-check"></i> Bağlantınız şifrelenerek korunur.</div>
-            <div class="form-foot">Hesabınız yok mu? <a href="Register.html">Kayıt Ol</a></div>
+            <div class="form-foot">Hesabınız yok mu? <a asp-controller="Register" asp-action="SignUp">Kayıt Ol</a></div>
           </form>
         </div>
       </section>

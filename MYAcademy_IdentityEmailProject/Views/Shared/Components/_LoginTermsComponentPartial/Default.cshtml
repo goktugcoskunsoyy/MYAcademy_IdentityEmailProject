@@ -1,8 +1,4 @@
-﻿  <!-- =====================================================================
-       ŞİFRE SIFIRLAMA MODAL
-       ASP.NET: Views/Account/_ForgotPasswordModal.cshtml (partial) → asp-action="ForgotPassword"
-       ===================================================================== -->
-  <div class="k-modal" id="resetModal" aria-hidden="true">
+﻿  <div class="k-modal" id="resetModal" aria-hidden="true">
     <div class="k-dialog" role="dialog" aria-modal="true" aria-labelledby="resetTitle">
       <div class="k-head">
         <div class="ic"><i class="bi bi-key"></i></div>
@@ -14,7 +10,7 @@
       </div>
 
       <div class="k-body">
-        <form id="resetForm" novalidate>
+        <form id="resetForm" method="post" asp-controller="PasswordChange" asp-action="ForgetPassword" novalidate>
           <div class="field" data-field="resetEmail">
             <label for="resetEmail">Email <span class="req">*</span></label>
             <div class="input-wrap">
@@ -26,11 +22,6 @@
             <div class="msg" aria-live="polite"></div>
           </div>
         </form>
-        <div class="sent-view" id="resetSent" hidden>
-          <div class="sent-ic"><i class="bi bi-envelope-check"></i></div>
-          <h4>E-postanızı kontrol edin</h4>
-          <p id="resetSentText"></p>
-        </div>
       </div>
 
       <div class="k-foot">
